@@ -156,32 +156,21 @@ const encoder = {
   'undefined': () => STREAMWRAP(transit(), 'transit')
 }
 
-const testfile = source =>
-  new Promise((resolve, reject) =>
-    source
-    .on('error', error =>
-      reject(error)
-    )
-    .on('open', fd =>
-      fs.fstat(fd, (error, stat) =>
-        error && reject(error) ||
-        resolve(stat)
-      )
-    )
-  )
+const testfile = location =>
+  fs.promises.stat(location)
   .then(stat =>
     stat.isFile() && Promise.resolve(
-      source
+      location
     ) ||
     stat.isDirectory() && Promise.reject(
       Object.assign(Error(
-        'EISDIR: illegal operation on a directory'
+        'EISDIR: illegal operation'
       ), {
         code: 'EISDIR'
       })
     ) ||
     Promise.reject(Error(
-      'illegal operationonan item'
+      'illegal operation'
     ))
   )
 
@@ -189,7 +178,8 @@ const getsource = (location, acceptHeader, encodingHeader) =>
   getsource[location] ||
   (
     getsource[location] =
-    testfile(
+    testfile(location)
+    .then(location =>
       fs.createReadStream(location, {
         autoClose: true,
         emitClose: true
@@ -371,7 +361,7 @@ const TOUCHSIGNS = (hostnames, mapSignname) =>
     )
     .catch(error => (
       log(
-        'Warning: certificate or one or more of keys were not loaded, selfsigned will be generated.'
+        'Warning: certificate or one or more of keys not loaded, selfsigned generating.'
       ),
       SELFSIGNED(hostnames)
       .then(pems =>
@@ -383,7 +373,7 @@ const TOUCHSIGNS = (hostnames, mapSignname) =>
         )
         .catch(error =>
           log(
-            'Warning: selfsigned has been generated, certificate or one or more of keys were not saved.'
+            'Warning: certificate or one or more of keys not saved, ignored.'
           )
         )
         .then(() =>
