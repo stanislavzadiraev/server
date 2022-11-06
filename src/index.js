@@ -1,4 +1,4 @@
-import stream from 'stream'
+import {Transform} from 'stream'
 import http2 from 'http2'
 import url from 'url'
 import fs from 'fs'
@@ -135,7 +135,7 @@ const RESPOND = (stream, response) =>
 ////////////////////////////////////////////////////////////////////////////////
 
 const transit = () =>
-  new stream.Transform({
+  new Transform({
     transform: (chunk, encoding, callback) =>
       setImmediate(callback, null, chunk)
   })
@@ -143,7 +143,7 @@ const transit = () =>
 const mimetype = location =>
   `${mime.getType(location) || '*/*'}; charset=utf-8`
 
-const encoding = encodingHeader =>
+const encodes = encodingHeader =>
   encodingHeader.includes('br') && 'br' ||
   encodingHeader.includes('gzip') && 'gzip' ||
   encodingHeader.includes('deflate') && 'deflate' ||
@@ -192,7 +192,7 @@ const sourcestream = (location, encodingHeader) =>
     )
     .then(source => [
       mimetype(location),
-      encoding(encodingHeader),
+      encodes(encodingHeader),
       source
     ])
     .then(([mimetype, encoding, source]) => [
