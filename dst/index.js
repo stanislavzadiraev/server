@@ -28409,7 +28409,7 @@ const RESPONDDIR = (stream, URL, location, acceptHeader, encodingHeader) =>
   )
   .then(filename => RESPONDFILE(
     stream,
-    (URL.pathname + filename, URL),
+    (URL.pathname += filename, URL),
     path.join(location, filename),
     acceptHeader,
     encodingHeader
