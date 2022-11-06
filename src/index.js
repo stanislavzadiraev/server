@@ -220,13 +220,13 @@ const RESPONDFILE = (stream, URL, location, encodingHeader) =>
   ))
 ////////////////////////////////////////////////////////////////////////////////
 
-const acceptable = acceptHeader =>
+const acceptables = acceptHeader =>
   acceptHeader.split(',')
-  .map((acceptItem, itemPosition, parentArray) =>
+  .map(acceptItem =>
     acceptItem
     .match(/^\s*((?:[a-z]+|\*)\/(?:(?:[a-z0-9]+)(?:[+\-.][a-z0-9]+)*|\*))(?:;q=([01](?:\.\d+)?))?\s*$/s)
   )
-  .map((acceptMatch, itemPosition, parentArray) => ({
+  .map((acceptMatch, itemPosition) => ({
     type: (acceptMatch && acceptMatch[1]) || '',
     weight: (acceptMatch && acceptMatch[2]) || 1,
     pos: itemPosition
@@ -252,42 +252,31 @@ const acceptable = acceptHeader =>
     'accept is empty'
   ))
 
-  const testdir = location =>
-    fs.promises.stat(location)
-    .then(stat =>
-      stat.isDirectory() && Promise.resolve(
-        location
-      ) ||
-      stat.isFile() && Promise.reject(
-        Object.assign(Error(
-          'FILENOTDIR: illegal operation'
-        ), {
-          code: 'FILENOTDIR'
-        })
-      ) ||
-      Promise.reject(Error(
-        'illegal operation'
-      ))
-    )
-
-const available = location =>
-  testdir(location)
-  .then(location =>
-    fs.promises.readdir(location, 'utf8')
-    .then(filenames =>
-      filenames || Promise.reject(Error(
-        'directory is empty'
-      ))
-    )
+const testdir = location =>
+  fs.promises.stat(location)
+  .then(stat =>
+    stat.isDirectory() && Promise.resolve(
+      location
+    ) ||
+    stat.isFile() && Promise.reject(
+      Object.assign(Error(
+        'FILENOTDIR: illegal operation'
+      ), {
+        code: 'FILENOTDIR'
+      })
+    ) ||
+    Promise.reject(Error(
+      'illegal operation'
+    ))
   )
 
 const sourcefile = (acceptHeader, location) =>
-  Promise.all([
-    acceptable(acceptHeader),
-    available(location)
-  ])
-  .then(([acceptables, availables]) =>
-    acceptables.find(
+  testdir(location)
+  .then(location =>
+    fs.promises.readdir(location, 'utf8')
+  )
+  .then(availables =>
+    acceptables(acceptHeader).find(
       acceptable =>
       availables.find(
         available =>
