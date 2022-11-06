@@ -4,7 +4,6 @@ import url from 'url';
 import fs from 'fs';
 import path from 'path';
 import zlib from 'zlib';
-import punycode from 'punycode';
 import require$$4 from 'crypto';
 
 var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
@@ -28165,8 +28164,7 @@ const responseheaders = headers => ({
       'headers already sent'
     )) ||
     Promise.resolve((
-      stream.respond(headers),
-      stream
+      stream.respond(headers), stream
     ))
 });
 
@@ -28472,7 +28470,7 @@ const TOUCHSIGNS = (hostnames, mapSignname) =>
   Promise.resolve(
     ['certificate', 'private', 'public']
     .map(name =>
-      `${(mapSignname || noop)(hostnames.join('-') || 'default')}.${name}.pem`
+      `${mapSignname(hostnames.join('-') || 'default')}.${name}.pem`
     )
   )
   .then(filenames =>
@@ -28511,7 +28509,7 @@ const TOUCHROOTS = (hostnames, mapHostname) =>
   Promise.all(
     hostnames
     .map(hostname =>
-      (mapHostname || noop)(hostname, '')
+      mapHostname(hostname, '')
     )
     .map((pathname) =>
       fs.promises.open(
@@ -28538,15 +28536,15 @@ const TOUCHROOTS = (hostnames, mapHostname) =>
 const create = (hostnames, mapHostname, mapSignname, port) => (
   log('Server starting.'),
   Promise.all([
-    TOUCHROOTS(hostnames || [], mapHostname || noop),
-    TOUCHSIGNS(hostnames || '', mapSignname || noop)
+    TOUCHROOTS(hostnames, mapHostname),
+    TOUCHSIGNS(hostnames, mapSignname)
   ])
   .then(([paths, [certificate, privateKey, publicKey]]) =>
     http2.createSecureServer({
       key: privateKey,
       cert: certificate
     })
-    .listen(port || 443)
+    .listen(port)
   )
   .then(server => (
     log('Server started.'),
@@ -28555,31 +28553,36 @@ const create = (hostnames, mapHostname, mapSignname, port) => (
 );
 
 const getidentifier = headers =>
-  headers[':method'] !== 'GET' && Promise.reject(
-    null
-  ) ||
-  (!headers[':scheme'] || !headers[':authority'] || !headers[':path']) && Promise.reject(Error(
-    'wrong URI'
+  (
+    headers[':method'] !== 'GET' ||
+    !headers[':scheme'] ||
+    !headers[':authority'] ||
+    !headers[':path']
+  ) &&
+  Promise.reject(Error(
+    'wrong request'
   )) ||
-  Promise.resolve(
-    url.parse(`${headers[':scheme']}://${headers[':authority']}${headers[':path']}`)
-  );
+  Promise.resolve(url.parse(
+    `${headers[':scheme']}://${headers[':authority']}${headers[':path']}`
+  ));
 
 const getlocation = (URI, hostnames, mapHostname, mapPathname) =>
   Promise.all(
     Object.entries({
-      hostname: path.normalize(punycode.toUnicode(URI.hostname)),
-      pathname: path.normalize(decodeURIComponent(URI.pathname))
+      hostname: url.domainToUnicode(URI.hostname),
+      pathname: path.normalize(URI.pathname)
     })
     .map(([key, value]) =>
-      (!value || !value.length) && Promise.reject(Error(
+      (!value || !value.length) &&
+      Promise.reject(Error(
         `empty ${key}`
       )) ||
       Promise.resolve(value)
     )
   )
   .then(([hostname, pathname]) =>
-    !(hostnames.length === 0 || hostnames.includes(hostname)) && Promise.reject(Error(
+    !(hostnames.length === 0 || hostnames.includes(hostname)) &&
+    Promise.reject(Error(
       'wrong hostname'
     )) ||
     Promise.resolve(
@@ -28596,9 +28599,9 @@ const answer = (hostnames, mapHostname, mapPathname, stream, headers) =>
   .then(URI =>
     getlocation(
       URI,
-      hostnames || '',
-      mapHostname || noop,
-      mapPathname || noop
+      hostnames,
+      mapHostname,
+      mapPathname
     )
     .then(location =>
       (location.slice(-1) === path.sep && RESPONDDIR || RESPONDFILE)(

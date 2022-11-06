@@ -443,31 +443,36 @@ const create = (hostnames, mapHostname, mapSignname, port) => (
 )
 
 const getidentifier = headers =>
-  headers[':method'] !== 'GET' && Promise.reject(
-    null
-  ) ||
-  (!headers[':scheme'] || !headers[':authority'] || !headers[':path']) && Promise.reject(Error(
-    'wrong URI'
+  (
+    headers[':method'] !== 'GET' ||
+    !headers[':scheme'] ||
+    !headers[':authority'] ||
+    !headers[':path']
+  ) &&
+  Promise.reject(Error(
+    'wrong request'
   )) ||
-  Promise.resolve(
-    url.parse(`${headers[':scheme']}://${headers[':authority']}${headers[':path']}`)
-  )
+  Promise.resolve(url.parse(
+    `${headers[':scheme']}://${headers[':authority']}${headers[':path']}`
+  ))
 
 const getlocation = (URI, hostnames, mapHostname, mapPathname) =>
   Promise.all(
     Object.entries({
-      hostname: path.normalize(url.domainToUnicode(URI.hostname)),
-      pathname: path.normalize(decodeURIComponent(URI.pathname))
+      hostname: url.domainToUnicode(URI.hostname),
+      pathname: path.normalize(URI.pathname)
     })
     .map(([key, value]) =>
-      (!value || !value.length) && Promise.reject(Error(
+      (!value || !value.length) &&
+      Promise.reject(Error(
         `empty ${key}`
       )) ||
       Promise.resolve(value)
     )
   )
   .then(([hostname, pathname]) =>
-    !(hostnames.length === 0 || hostnames.includes(hostname)) && Promise.reject(Error(
+    !(hostnames.length === 0 || hostnames.includes(hostname)) &&
+    Promise.reject(Error(
       'wrong hostname'
     )) ||
     Promise.resolve(
