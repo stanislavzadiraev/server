@@ -28283,7 +28283,7 @@ const testfile = location =>
     ))
   );
 
-const sourcestream = (location, acceptHeader, encodingHeader) =>
+const sourcestream = (location, encodingHeader) =>
   sourcestream[location] ||
   (
     sourcestream[location] =
@@ -28314,8 +28314,8 @@ const sourcestream = (location, acceptHeader, encodingHeader) =>
     ])
   );
 
-const RESPONDFILE = (stream, URL, location, acceptHeader, encodingHeader) =>
-  sourcestream(location, acceptHeader, encodingHeader)
+const RESPONDFILE = (stream, URL, location, encodingHeader) =>
+  sourcestream(location, encodingHeader)
   .then(([mimetype, encoding, source]) => RESPOND(
     stream, RESPONSESTREAM(mimetype, encoding, source)
   ))
@@ -28414,7 +28414,6 @@ const RESPONDDIR = (stream, URL, location, acceptHeader, encodingHeader) =>
     stream,
     (URL.pathname += filename, URL),
     path.join(location, filename),
-    acceptHeader,
     encodingHeader
   ))
   .catch(error => RESPOND(
