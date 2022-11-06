@@ -207,18 +207,17 @@ const getsource = (location, acceptHeader, encodingHeader) =>
 
 const RESPONDFILE = (stream, URL, location, acceptHeader, encodingHeader) =>
   getsource(location, acceptHeader, encodingHeader)
-  .then(([mimetype, encoding, source]) =>
-    RESPOND(stream, RESPONSESTREAM(mimetype, encoding, source))
-  )
-  .catch(error =>
-    RESPOND(stream,
-      error.code === 'DIRNOTFILE' && RESPONSEREDIRECT(
-        `${error.name}: not a file, open: ${URL.pathname}.`,
-        (URL.pathname = URL.pathname.concat('/'), URL.format())
-      ) ||
-      RESPONSEEXCUSE(error, 'open', URL)
-    )
-  )
+  .then(([mimetype, encoding, source]) => RESPOND(
+    stream, RESPONSESTREAM(mimetype, encoding, source)
+  ))
+  .catch(error => RESPOND(
+    stream,
+    error.code === 'DIRNOTFILE' && RESPONSEREDIRECT(
+      `${error.name}: not a file, open: ${URL.pathname}.`,
+      (URL.pathname = URL.pathname.concat('/'), URL.format())
+    ) ||
+    RESPONSEEXCUSE(error, 'open', URL)
+  ))
 ////////////////////////////////////////////////////////////////////////////////
 
 const acceptable = acceptHeader =>
@@ -299,24 +298,21 @@ const RESPONDDIR = (stream, URL, location, acceptHeader, encodingHeader) =>
       'no match file'
     ))
   )
-  .then(filename =>
-    RESPONDFILE(
-      stream,
-      ((URL.pathname = URL.pathname.concat(filename)), URL),
-      path.join(location, filename),
-      acceptHeader,
-      encodingHeader
-    )
-  )
-  .catch(error =>
-    RESPOND(stream,
-      error.code === 'FILENOTDIR' && RESPONSEREDIRECT(
-        `${error.name}: not a directory, scandir: ${URL.pathname}`,
-        ((URL.pathname = URL.pathname.slice(0, -1)), URL.format())
-      ) ||
-      RESPONSEEXCUSE(error, 'scan', URL)
-    )
-  )
+  .then(filename => RESPONDFILE(
+    stream,
+    ((URL.pathname = URL.pathname.concat(filename)), URL),
+    path.join(location, filename),
+    acceptHeader,
+    encodingHeader
+  ))
+  .catch(error => RESPOND(
+    stream,
+    error.code === 'FILENOTDIR' && RESPONSEREDIRECT(
+      `${error.name}: not a directory, scandir: ${URL.pathname}`,
+      ((URL.pathname = URL.pathname.slice(0, -1)), URL.format())
+    ) ||
+    RESPONSEEXCUSE(error, 'scan', URL)
+  ))
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -516,15 +512,13 @@ const answer = (hostnames, mapHostname, mapPathname, stream, headers) =>
       )
     )
   )
-  .catch(error =>
-    error && RESPOND(
+  .catch(error => error && RESPOND(
       stream,
       RESPONSEEXCUSE(error, `wrong request`, {})
-    )
-  )
+  ))
 
 const INDEX = ({
-    hostnames = [],
+    hostnames = ['127.0.0.1'],
     mapHostname = noop,
     mapSignname = noop,
     mapPathname = noop,
