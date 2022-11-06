@@ -28289,7 +28289,10 @@ const getsource = (location, acceptHeader, encodingHeader) =>
     getsource[location] =
     testfile(location)
     .then(location =>
-      fs.createReadStream(location, {
+      fs.promises.open(location)
+    )
+    .then(fh =>
+      fh.createReadStream({
         autoClose: true,
         emitClose: true
       })
