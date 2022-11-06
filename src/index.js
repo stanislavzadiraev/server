@@ -405,9 +405,14 @@ const TOUCHROOTS = (hostnames, mapHostname) =>
       fs.promises.readdir(pathname)
       .catch(error => (
         log(
-          `Warning: source path '${pathname}' not found, empty will be created.`
+          `Warning: source path '${pathname}' not found, empty creating.`
         ),
         fs.promises.mkdir(pathname)
+        .catch(error =>
+          log(
+            `Warning: source path '${pathname}' not created, ignored.`
+          )
+        )
       ))
       .then(() =>
         pathname
