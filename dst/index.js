@@ -28359,12 +28359,33 @@ const acceptable = acceptHeader =>
     'accept is empty'
   ));
 
+  const testdir = location =>
+    fs.promises.stat(location)
+    .then(stat =>
+      stat.isDirectory() && Promise.resolve(
+        location
+      ) ||
+      stat.isFile() && Promise.reject(
+        Object.assign(Error(
+          'ENOTDIR: illegal operation'
+        ), {
+          code: 'ENOTDIR'
+        })
+      ) ||
+      Promise.reject(Error(
+        'illegal operation'
+      ))
+    );
+
 const available = location =>
-  fs.promises.readdir(location, 'utf8')
-  .then(filenames =>
-    filenames || Promise.reject(Error(
-      'directory is empty'
-    ))
+  testdir(location)
+  .then(location =>
+    fs.promises.readdir(location, 'utf8')
+    .then(filenames =>
+      filenames || Promise.reject(Error(
+        'directory is empty'
+      ))
+    )
   );
 
 const RESPONDDIR = (stream, URL, location, acceptHeader, encodingHeader) =>
