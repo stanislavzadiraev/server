@@ -8,7 +8,7 @@ import zlib from 'zlib'
 import mime from 'mime'
 import forge from 'node-forge'
 
-const mute = true
+const mute = false
 
 const noop = _ => _
 

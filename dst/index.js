@@ -28126,7 +28126,6 @@ var forge = /*@__PURE__*/getDefaultExportFromCjs(lib.exports);
 const noop = _ => _;
 
 const log = str =>
-  noop(str) ||
   (console.log(str), str);
 
 ////////////////////////////////////////////////////////////////////////////////
