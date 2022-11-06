@@ -28283,10 +28283,10 @@ const testfile = location =>
     ))
   );
 
-const getsource = (location, acceptHeader, encodingHeader) =>
-  getsource[location] ||
+const sourcestream = (location, acceptHeader, encodingHeader) =>
+  sourcestream[location] ||
   (
-    getsource[location] =
+    sourcestream[location] =
     testfile(location)
     .then(location =>
       fs.promises.open(location)
@@ -28296,8 +28296,8 @@ const getsource = (location, acceptHeader, encodingHeader) =>
         autoClose: true,
         emitClose: true
       })
-      .on('ready', () => delete getsource[location])
-      .on('error', () => delete getsource[location])
+      .on('ready', () => delete sourcestream[location])
+      .on('error', () => delete sourcestream[location])
     )
     .then(source => [
       mimetype(location),
@@ -28315,7 +28315,7 @@ const getsource = (location, acceptHeader, encodingHeader) =>
   );
 
 const RESPONDFILE = (stream, URL, location, acceptHeader, encodingHeader) =>
-  getsource(location, acceptHeader, encodingHeader)
+  sourcestream(location, acceptHeader, encodingHeader)
   .then(([mimetype, encoding, source]) => RESPOND(
     stream, RESPONSESTREAM(mimetype, encoding, source)
   ))
@@ -28390,7 +28390,7 @@ const available = location =>
     )
   );
 
-const RESPONDDIR = (stream, URL, location, acceptHeader, encodingHeader) =>
+const sourcefile = (acceptHeader, location) =>
   Promise.all([
     acceptable(acceptHeader),
     available(location)
@@ -28406,7 +28406,10 @@ const RESPONDDIR = (stream, URL, location, acceptHeader, encodingHeader) =>
     Promise.reject(Error(
       'no match file'
     ))
-  )
+  );
+
+const RESPONDDIR = (stream, URL, location, acceptHeader, encodingHeader) =>
+  sourcefile(acceptHeader, location)
   .then(filename => RESPONDFILE(
     stream,
     (URL.pathname += filename, URL),
