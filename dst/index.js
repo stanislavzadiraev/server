@@ -28273,9 +28273,9 @@ const testfile = location =>
     ) ||
     stat.isDirectory() && Promise.reject(
       Object.assign(Error(
-        'EISDIR: illegal operation'
+        'DIRNOTFILE: illegal operation'
       ), {
-        code: 'EISDIR'
+        code: 'DIRNOTFILE'
       })
     ) ||
     Promise.reject(Error(
@@ -28318,7 +28318,7 @@ const RESPONDFILE = (stream, URL, location, acceptHeader, encodingHeader) =>
   )
   .catch(error =>
     RESPOND(stream,
-      error.code === 'EISDIR' && RESPONSEREDIRECT(
+      error.code === 'DIRNOTFILE' && RESPONSEREDIRECT(
         `${error.name}: not a file, open: ${URL.pathname}.`,
         (URL.pathname = URL.pathname.concat('/'), URL.format())
       ) ||
@@ -28367,9 +28367,9 @@ const acceptable = acceptHeader =>
       ) ||
       stat.isFile() && Promise.reject(
         Object.assign(Error(
-          'ENOTDIR: illegal operation'
+          'FILENOTDIR: illegal operation'
         ), {
-          code: 'ENOTDIR'
+          code: 'FILENOTDIR'
         })
       ) ||
       Promise.reject(Error(
@@ -28416,7 +28416,7 @@ const RESPONDDIR = (stream, URL, location, acceptHeader, encodingHeader) =>
   )
   .catch(error =>
     RESPOND(stream,
-      error.code === 'ENOTDIR' && RESPONSEREDIRECT(
+      error.code === 'FILENOTDIR' && RESPONSEREDIRECT(
         `${error.name}: not a directory, scandir: ${URL.pathname}`,
         ((URL.pathname = URL.pathname.slice(0, -1)), URL.format())
       ) ||
