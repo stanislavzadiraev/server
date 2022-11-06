@@ -28185,12 +28185,12 @@ const responseerror = (status, content) => ({
   ...responseblock(content)
 });
 
-const RESPONSEEXCUSE = (error, action, URI) =>
+const RESPONSEEXCUSE = (error, action, URL) =>
   error.code === 'ENOENT' && responseerror(
-    404, `${error.name}: no such file or directory, ${action}: ${URI.pathname}.`
+    404, `${error.name}: no such file or directory, ${action}: ${URL.pathname}.`
   ) ||
   responseerror(
-    500, `${error.name}: ${error.message}, ${action}: ${URI.pathname}.`
+    500, `${error.name}: ${error.message}, ${action}: ${URL.pathname}.`
   );
 
 const RESPONSEREDIRECT = (content, location) => ({
@@ -28322,7 +28322,7 @@ const getsource = (location, acceptHeader, encodingHeader) =>
     ])
   );
 
-const RESPONDFILE = (stream, URI, location, acceptHeader, encodingHeader) =>
+const RESPONDFILE = (stream, URL, location, acceptHeader, encodingHeader) =>
   getsource(location, acceptHeader, encodingHeader)
   .then(([mimetype, encoding, source]) =>
     RESPOND(stream, RESPONSESTREAM(mimetype, encoding, source))
@@ -28330,10 +28330,10 @@ const RESPONDFILE = (stream, URI, location, acceptHeader, encodingHeader) =>
   .catch(error =>
     RESPOND(stream,
       error.code === 'EISDIR' && RESPONSEREDIRECT(
-        `${error.name}: not a file, open: ${URI.pathname}.`,
-        (URI.pathname = URI.pathname.concat('/'), URI.format())
+        `${error.name}: not a file, open: ${URL.pathname}.`,
+        (URL.pathname = URL.pathname.concat('/'), URL.format())
       ) ||
-      RESPONSEEXCUSE(error, 'open', URI)
+      RESPONSEEXCUSE(error, 'open', URL)
     )
   );
 ////////////////////////////////////////////////////////////////////////////////
@@ -28378,7 +28378,7 @@ const available = location =>
     ))
   );
 
-const RESPONDDIR = (stream, URI, location, acceptHeader, encodingHeader) =>
+const RESPONDDIR = (stream, URL, location, acceptHeader, encodingHeader) =>
   Promise.all([
     acceptable(acceptHeader),
     available(location)
@@ -28398,7 +28398,7 @@ const RESPONDDIR = (stream, URI, location, acceptHeader, encodingHeader) =>
   .then(filename =>
     RESPONDFILE(
       stream,
-      ((URI.pathname = URI.pathname.concat(filename)), URI),
+      ((URL.pathname = URL.pathname.concat(filename)), URL),
       path.join(location, filename),
       acceptHeader,
       encodingHeader
@@ -28407,10 +28407,10 @@ const RESPONDDIR = (stream, URI, location, acceptHeader, encodingHeader) =>
   .catch(error =>
     RESPOND(stream,
       error.code === 'ENOTDIR' && RESPONSEREDIRECT(
-        `${error.name}: not a directory, scandir: ${URI.pathname}`,
-        ((URI.pathname = URI.pathname.slice(0, -1)), URI.format())
+        `${error.name}: not a directory, scandir: ${URL.pathname}`,
+        ((URL.pathname = URL.pathname.slice(0, -1)), URL.format())
       ) ||
-      RESPONSEEXCUSE(error, 'scan', URI)
+      RESPONSEEXCUSE(error, 'scan', URL)
     )
   );
 
@@ -28512,13 +28512,7 @@ const TOUCHROOTS = (hostnames, mapHostname) =>
       mapHostname(hostname, '')
     )
     .map((pathname) =>
-      fs.promises.open(
-        pathname,
-        fs.constants.O_RDONLY | fs.constants.O_DIRECTORY
-      )
-      .then(fh =>
-        fh.close()
-      )
+      fs.promises.readdir(pathname)
       .catch(error => (
         log(
           `Warning: source path '${pathname}' not found, empty will be created.`
@@ -28566,11 +28560,11 @@ const getidentifier = headers =>
     `${headers[':scheme']}://${headers[':authority']}${headers[':path']}`
   ));
 
-const getlocation = (URI, hostnames, mapHostname, mapPathname) =>
+const getlocation = (URL, hostnames, mapHostname, mapPathname) =>
   Promise.all(
     Object.entries({
-      hostname: url.domainToUnicode(URI.hostname),
-      pathname: path.normalize(URI.pathname)
+      hostname: url.domainToUnicode(URL.hostname),
+      pathname: path.normalize(URL.pathname)
     })
     .map(([key, value]) =>
       (!value || !value.length) &&
@@ -28596,9 +28590,9 @@ const getlocation = (URI, hostnames, mapHostname, mapPathname) =>
 
 const answer = (hostnames, mapHostname, mapPathname, stream, headers) =>
   getidentifier(headers)
-  .then(URI =>
+  .then(URL =>
     getlocation(
-      URI,
+      URL,
       hostnames,
       mapHostname,
       mapPathname
@@ -28606,7 +28600,7 @@ const answer = (hostnames, mapHostname, mapPathname, stream, headers) =>
     .then(location =>
       (location.slice(-1) === path.sep && RESPONDDIR || RESPONDFILE)(
         STREAMWRAP(stream, 'output'),
-        URI,
+        URL,
         location,
         headers['accept'] || '',
         headers['accept-encoding'] || ''
