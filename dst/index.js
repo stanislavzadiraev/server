@@ -28213,11 +28213,7 @@ const RESPONSESTREAM = (type, encoding, source) => ({
     )) ||
     Promise.resolve(
       source.pipe(output)
-      .on('aborted', () =>
-        output.destroy(Error(
-          `aborted and destroyed`
-        ))
-      )
+
     ),
   reject: (output, error) => (
     source
@@ -28287,6 +28283,11 @@ const sourcestream = (location, encodingHeader) =>
         autoClose: true,
         emitClose: true
       })
+      .on('aborted', () =>
+        output.destroy(Error(
+          `aborted and destroyed`
+        ))
+      )
       .on('ready', () => delete sourcestream[location])
       .on('error', () => delete sourcestream[location])
 
