@@ -28174,21 +28174,13 @@ const responseblock = (output, content) =>
       .end(content), output
     ));
 
-const responseerror = (output, status, content) =>
+const RESPONSEEXCUSE = (output, error, action, URL) =>
   responseheaders(output, {
-    ':status': status,
+    ':status': error.code === 'ENOENT' && 404 || 500,
     'content-type': 'text/plain;charset=utf-8'
   })
   .then(output =>
-    responseblock(output, content)
-  );
-
-const RESPONSEEXCUSE = (output, error, action, URL) =>
-  error.code === 'ENOENT' && responseerror(output,
-    404, `${error.name}: ${error.message} ${action}: ${URL.pathname}.`
-  ) ||
-  responseerror(output,
-    500, `${error.name}: ${error.message}, ${action}: ${URL.pathname}.`
+    responseblock(output, `${error.name}: ${error.message}, ${action}: ${URL.pathname}.`)
   );
 
 const RESPONSEREDIRECT = (output, content, location) =>
@@ -28200,7 +28192,6 @@ const RESPONSEREDIRECT = (output, content, location) =>
   .then(output =>
     responseblock(output, content)
   );
-
 
 const RESPONSESTREAM = (output, type, encoding, source) =>
   responseheaders(output, {
