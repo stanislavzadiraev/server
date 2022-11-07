@@ -31,7 +31,7 @@ const STREAMWRAP = (stream, name) =>
   )
   .on('unpipe', stream._writableState !== undefined && (source =>
     !source._readableState.ended && !source._readableState.destroyed &&
-    (source.listenerCount('data') === 1) && source.destroy(Error(
+    (source.listenerCount('data') > 0) && source.destroy(Error(
       `unpiped and destroyed`
     ))
   ) || noop)
@@ -142,7 +142,7 @@ const testfile = location =>
     ) ||
     stat.isDirectory() && Promise.reject(
       Object.assign(Error(
-        'DIRNOTFILE: illegal operation'
+        'illegal operation'
       ), {
         code: 'DIRNOTFILE'
       })
@@ -161,7 +161,10 @@ const sourcestream = (location, encodingHeader) =>
       fs.promises.open(location)
     )
     .then(fh =>
-      STREAMWRAP(fh.createReadStream({ autoClose: true, emitClose: true }), 'source')
+      STREAMWRAP(fh.createReadStream(
+        { autoClose: true, emitClose: true }),
+        'source'
+      )
       .on('ready', () => delete sourcestream[location])
       .on('error', () => delete sourcestream[location])
 
@@ -236,7 +239,7 @@ const testdir = location =>
     ) ||
     stat.isFile() && Promise.reject(
       Object.assign(Error(
-        'FILENOTDIR: illegal operation'
+        'sillegal operation'
       ), {
         code: 'FILENOTDIR'
       })
@@ -259,9 +262,13 @@ const sourcefile = (acceptHeader, location) =>
         acceptable === available
       )
     ) ||
-    Promise.reject(Error(
-      'no match file'
-    ))
+    Promise.reject(
+      Object.assign(Error(
+        'no match file'
+      ), {
+        code: 'ENOET'
+      })
+    )
   )
 
 const RESPONDDIR = (output, URL, location, acceptHeader, encodingHeader) =>
