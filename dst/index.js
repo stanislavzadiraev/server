@@ -28268,10 +28268,7 @@ const sourcestream = (location, encodingHeader) =>
       fs.promises.open(location)
     )
     .then(fh =>
-      fh.createReadStream({
-        autoClose: true,
-        emitClose: true
-      })
+      STREAMWRAP(fh.createReadStream({ autoClose: true, emitClose: true }), 'source')
       .on('ready', () => delete sourcestream[location])
       .on('error', () => delete sourcestream[location])
 
@@ -28283,14 +28280,7 @@ const sourcestream = (location, encodingHeader) =>
       encodingHeader.includes('deflate') && 'deflate' ||
       'undefined',
       source
-    ])
-    .then(([mimetype, encoding, source]) => [
-      mimetype,
-      encoding,
-      STREAMWRAP(source, 'source')
-//      .pipe(STREAMWRAP(transit(), 'source transit'))
       .pipe(encoder[encoding]())
-//      .pipe(STREAMWRAP(transit(), 'output transit'))
     ])
   );
 
