@@ -205,7 +205,7 @@ const sourcestream = (location, encodingHeader) =>
     ])
   )
 
-const RESPONDFILE = (stream, URL, location, encodingHeader) =>
+const RESPONDFILE = (stream, URL, location, acceptHeader, encodingHeader) =>
   sourcestream(location, encodingHeader)
   .then(([mimetype, encoding, source]) => RESPOND(
     stream, RESPONSESTREAM(mimetype, encoding, source)
