@@ -28152,27 +28152,27 @@ const STREAMWRAP = (stream, name) =>
 ////////////////////////////////////////////////////////////////////////////////
 
 const responseheaders = headers => ({
-  sendHead: stream =>
-    (stream._writableState.finished || stream._writableState.destroyed) && Promise.reject(Error(
+  sendHead: output =>
+    (output._writableState.finished || output._writableState.destroyed) && Promise.reject(Error(
       'wrong output state'
     )) ||
     (!headers[':status'] || !headers['content-type']) && Promise.reject(Error(
       'wrong respond headers'
     )) ||
-    stream.headersSent && Promise.reject(Error(
+    output.headersSent && Promise.reject(Error(
       'headers already sent'
     )) ||
     Promise.resolve((
-      stream.respond(headers), stream
+      output.respond(headers), output
     ))
 });
 
 const responseblock = content => ({
-  sendBody: stream =>
-    stream
+  sendBody: output =>
+    output
     .end(content),
-  reject: (stream, error) =>
-    stream
+  reject: (output, error) =>
+    output
     .destroy(error)
 });
 
@@ -28207,33 +28207,38 @@ const RESPONSESTREAM = (type, encoding, source) => ({
     'content-type': type,
     'content-encoding': encoding
   }),
-  sendBody: stream =>
-    stream.aborted && Promise.reject(Error(
+  sendBody: output =>
+    output.aborted && Promise.reject(Error(
       `aborted and destroyed`
     )) ||
     Promise.resolve(
-      source.pipe(stream)
+      source.pipe(output)
+      .on('aborted', () =>
+        output.destroy(Error(
+          `aborted and destroyed`
+        ))
+      )
     ),
-  reject: (stream, error) => (
+  reject: (output, error) => (
     source
     .destroy(error),
-    stream
+    output
     .destroy(error)
   )
 });
 
 ////////////////////////////////////////////////////////////////////////////////
 
-const RESPOND = (stream, response) =>
+const RESPOND = (output, response) =>
   response
-  .sendHead(stream)
-  .then(stream =>
+  .sendHead(output)
+  .then(output =>
     response
-    .sendBody(stream)
+    .sendBody(output)
   )
   .catch(error =>
     response
-    .reject(stream, error)
+    .reject(output, error)
   );
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -28282,13 +28287,9 @@ const sourcestream = (location, encodingHeader) =>
         autoClose: true,
         emitClose: true
       })
-      .on('aborted', () =>
-        stream.destroy(Error(
-          `aborted and destroyed`
-        ))
-      )
       .on('ready', () => delete sourcestream[location])
       .on('error', () => delete sourcestream[location])
+
     )
     .then(source => [
       `${mime.getType(location) || '*/*'}; charset=utf-8`,
@@ -28302,17 +28303,20 @@ const sourcestream = (location, encodingHeader) =>
       mimetype,
       encoding,
       STREAMWRAP(source, 'source')
+//      .pipe(STREAMWRAP(transit(), 'source transit'))
       .pipe(encoder[encoding]())
+//      .pipe(STREAMWRAP(transit(), 'output transit'))
     ])
   );
 
-const RESPONDFILE = (stream, URL, location, acceptHeader, encodingHeader) =>
+const RESPONDFILE = (output, URL, location, acceptHeader, encodingHeader) =>
   sourcestream(location, encodingHeader)
   .then(([mimetype, encoding, source]) => RESPOND(
-    stream, RESPONSESTREAM(mimetype, encoding, source)
+    output,
+    RESPONSESTREAM(mimetype, encoding, source)
   ))
   .catch(error => RESPOND(
-    stream,
+    output,
     error.code === 'DIRNOTFILE' && RESPONSEREDIRECT(
       `${error.name}: not a file, open: ${URL.pathname}.`,
       (URL.pathname = URL.pathname.concat('/'), URL.format())
@@ -28387,17 +28391,17 @@ const sourcefile = (acceptHeader, location) =>
     ))
   );
 
-const RESPONDDIR = (stream, URL, location, acceptHeader, encodingHeader) =>
+const RESPONDDIR = (output, URL, location, acceptHeader, encodingHeader) =>
   sourcefile(acceptHeader, location)
   .then(filename => RESPONDFILE(
-    stream,
+    output,
     (URL.pathname += filename, URL),
     path.join(location, filename),
     acceptHeader,
     encodingHeader
   ))
   .catch(error => RESPOND(
-    stream,
+    output,
     error.code === 'FILENOTDIR' && RESPONSEREDIRECT(
       `${error.name}: not a directory, scandir: ${URL.pathname}`,
       ((URL.pathname = URL.pathname.slice(0, -1)), URL.format())
@@ -28584,7 +28588,7 @@ const getlocation = (URL, hostnames, mapHostname, mapPathname) =>
     )
   );
 
-const answer = (hostnames, mapHostname, mapPathname, stream, headers) =>
+const answer = (hostnames, mapHostname, mapPathname, output, headers) =>
   getidentifier(headers)
   .then(URL =>
     getlocation(
@@ -28595,7 +28599,7 @@ const answer = (hostnames, mapHostname, mapPathname, stream, headers) =>
     )
     .then(location =>
       (location.slice(-1) === path.sep && RESPONDDIR || RESPONDFILE)(
-        STREAMWRAP(stream, 'output'),
+        STREAMWRAP(output, 'output'),
         URL,
         location,
         headers['accept'] || '',
@@ -28604,7 +28608,7 @@ const answer = (hostnames, mapHostname, mapPathname, stream, headers) =>
     )
   )
   .catch(error => error && RESPOND(
-      stream,
+      output,
       RESPONSEEXCUSE(error, `wrong request`, {})
   ));
 
@@ -28623,12 +28627,12 @@ const INDEX = ({
   )
   .then(server =>
     server
-    .on('stream', (stream, headers) =>
+    .on('stream', (output, headers) =>
       answer(
         hostnames,
         mapHostname,
         mapPathname,
-        stream,
+        output,
         headers
       )
     )
