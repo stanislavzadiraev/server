@@ -67,9 +67,6 @@ const responseblock = content => ({
     )) ||
     output
     .end(content),
-  reject: (output, error) =>
-    output
-    .destroy(error)
 })
 
 const responseerror = (status, content) => ({
@@ -110,12 +107,6 @@ const RESPONSESTREAM = (type, encoding, source) => ({
     Promise.resolve(
       source.pipe(output)
     ),
-  reject: (output, error) => (
-    source
-    .destroy(error),
-    output
-    .destroy(error)
-  )
 })
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -126,10 +117,6 @@ const RESPOND = (output, response) =>
   .then(output =>
     response
     .sendBody(output)
-  )
-  .catch(error =>
-    response
-    .reject(output, error)
   )
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -509,7 +496,7 @@ const answer = (hostnames, mapHostname, mapPathname, output, headers) =>
   ))
 
 const INDEX = ({
-    hostnames = ['127.0.0.1'],
+    hostnames = ['localhost'],
     mapHostname = noop,
     mapSignname = noop,
     mapPathname = noop,
