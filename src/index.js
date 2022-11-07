@@ -45,6 +45,9 @@ const STREAMWRAP = (stream, name) =>
 ////////////////////////////////////////////////////////////////////////////////
 
 const responseheaders = (output, headers) =>
+    output.aborted && Promise.reject(Error(
+      `aborted`
+    )) ||
     (output._writableState.finished || output._writableState.destroyed) && Promise.reject(Error(
       'wrong output state'
     )) ||
@@ -59,13 +62,7 @@ const responseheaders = (output, headers) =>
     ))
 
 const responseblock = (output, content) =>
-    output.aborted && Promise.reject(Error(
-      `aborted`
-    )) ||
-    Promise.resolve((
-      output
-      .end(content), output
-    ))
+      (output.end(content), output)
 
 const RESPONSEEXCUSE = (output, error, action, URL) =>
   responseheaders(output, {
@@ -93,12 +90,7 @@ const RESPONSESTREAM = (output, type, encoding, source) =>
     'content-encoding': encoding
   })
   .then(output =>
-    output.aborted && Promise.reject(Error(
-      `aborted`
-    )) ||
-    Promise.resolve((
-      source.pipe(output), output
-    ))
+      (source.pipe(output), output)
   )
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -159,15 +151,6 @@ const sourcestream = (location, encodingHeader) =>
     source
     .pipe(encoder[encoding]())
   ])
-  .catch(() =>
-    Promise.reject(
-      Object.assign(Error(
-        'no match item'
-      ), {
-        code: 'ENOENT'
-      })
-    )
-  )
 
 const RESPONDFILE = (output, URL, location, acceptHeader, encodingHeader) =>
   sourcestream(location, encodingHeader)
@@ -243,15 +226,6 @@ const sourcefile = (acceptHeader, location) =>
         available =>
         acceptable === available
       )
-    )
-  )
-  .catch(() =>
-    Promise.reject(
-      Object.assign(Error(
-        'no match item'
-      ), {
-        code: 'ENOENT'
-      })
     )
   )
 
