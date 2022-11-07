@@ -294,6 +294,7 @@ const RESPONDDIR = (stream, URL, location, acceptHeader, encodingHeader) =>
     stream,
     (URL.pathname += filename, URL),
     path.join(location, filename),
+    acceptHeader,
     encodingHeader
   ))
   .catch(error => RESPOND(
