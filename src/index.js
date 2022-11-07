@@ -65,8 +65,10 @@ const responseblock = content => ({
     output.aborted && Promise.reject(Error(
       `aborted and destroyed`
     )) ||
-    output
-    .end(content),
+    Promise.resolve(
+      output
+      .end(content)
+    )
 })
 
 const responseerror = (status, content) => ({
@@ -79,10 +81,10 @@ const responseerror = (status, content) => ({
 
 const RESPONSEEXCUSE = (error, action, URL) =>
   error.code === 'ENOENT' && responseerror(
-    404, `${error.name}: ${error.message}, ${action}: ${URL.pathname}.`
+    404, `${error.name}: no match item, ${action}: ${URL.pathname}.`
   ) ||
   responseerror(
-    500, `${error.name}: ${error.message}, ${action}: ${URL.pathname}.`
+    500, `${error.name}: internal error, ${action}: ${URL.pathname}.`
   )
 
 const RESPONSEREDIRECT = (content, location) => ({
@@ -108,8 +110,6 @@ const RESPONSESTREAM = (type, encoding, source) => ({
       source.pipe(output)
     ),
 })
-
-////////////////////////////////////////////////////////////////////////////////
 
 const RESPOND = (output, response) =>
   response
@@ -187,12 +187,10 @@ const sourcestream = (location, encodingHeader) =>
 
 const RESPONDFILE = (output, URL, location, acceptHeader, encodingHeader) =>
   sourcestream(location, encodingHeader)
-  .then(([mimetype, encoding, source]) => RESPOND(
-    output,
+  .then(([mimetype, encoding, source]) => RESPOND(output,
     RESPONSESTREAM(mimetype, encoding, source)
   ))
-  .catch(error => RESPOND(
-    output,
+  .catch(error => RESPOND(output,
     error.code === 'DIRNOTFILE' && RESPONSEREDIRECT(
       `${error.name}: not a file, open: ${URL.pathname}.`,
       (URL.pathname = URL.pathname.concat('/'), URL.format())
@@ -280,8 +278,7 @@ const RESPONDDIR = (output, URL, location, acceptHeader, encodingHeader) =>
     acceptHeader,
     encodingHeader
   ))
-  .catch(error => RESPOND(
-    output,
+  .catch(error => RESPOND(output,
     error.code === 'FILENOTDIR' && RESPONSEREDIRECT(
       `${error.name}: not a directory, scandir: ${URL.pathname}`,
       ((URL.pathname = URL.pathname.slice(0, -1)), URL.format())
@@ -492,8 +489,7 @@ const answer = (hostnames, mapHostname, mapPathname, output, headers) =>
       )
     )
   )
-  .catch(error => error && RESPOND(
-      output,
+  .catch(error => error && RESPOND(output,
       RESPONSEEXCUSE(error, `wrong request`, {})
   ))
 
