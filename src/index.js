@@ -8,6 +8,8 @@ import zlib from 'zlib'
 import mime from 'mime'
 import forge from 'node-forge'
 
+////////////////////////////////////////////////////////////////////////////////
+
 const mute = false
 
 const noop = _ => _
@@ -104,11 +106,6 @@ const RESPONSESTREAM = (type, encoding, source) => ({
     )) ||
     Promise.resolve(
       source.pipe(stream)
-      .on('aborted', () =>
-        stream.destroy(Error(
-          `aborted and destroyed`
-        ))
-      )
     ),
   reject: (stream, error) => (
     source
@@ -178,6 +175,11 @@ const sourcestream = (location, encodingHeader) =>
         autoClose: true,
         emitClose: true
       })
+      .on('aborted', () =>
+        stream.destroy(Error(
+          `aborted and destroyed`
+        ))
+      )
       .on('ready', () => delete sourcestream[location])
       .on('error', () => delete sourcestream[location])
     )
@@ -193,9 +195,7 @@ const sourcestream = (location, encodingHeader) =>
       mimetype,
       encoding,
       STREAMWRAP(source, 'source')
-//      .pipe(STREAMWRAP(transit(), 'source transit'))
       .pipe(encoder[encoding]())
-//      .pipe(STREAMWRAP(transit(), 'output transit'))
     ])
   )
 
