@@ -28170,7 +28170,7 @@ const responseheaders = headers => ({
 const responseblock = content => ({
   sendBody: output =>
     output.aborted && Promise.reject(Error(
-      `aborted and destroyed`
+      `aborted`
     )) ||
     Promise.resolve(
       output
@@ -28211,11 +28211,11 @@ const RESPONSESTREAM = (type, encoding, source) => ({
   }),
   sendBody: output =>
     output.aborted && Promise.reject(Error(
-      `aborted and destroyed`
+      `aborted`
     )) ||
     Promise.resolve(
       source.pipe(output)
-    ),
+    )
 });
 
 const RESPOND = (output, response) =>
@@ -28261,8 +28261,6 @@ const testfile = location =>
 
 const sourcestream = (location, encodingHeader) =>
   sourcestream[location] ||
-  (
-    sourcestream[location] =
     testfile(location)
     .then(location =>
       fs.promises.open(location)
@@ -28272,9 +28270,6 @@ const sourcestream = (location, encodingHeader) =>
         { autoClose: true, emitClose: true }),
         'source'
       )
-      .on('ready', () => delete sourcestream[location])
-      .on('error', () => delete sourcestream[location])
-
     )
     .then(source => [
       `${mime.getType(location) || '*/*'}; charset=utf-8`,
@@ -28289,8 +28284,8 @@ const sourcestream = (location, encodingHeader) =>
       encoding,
       source
       .pipe(encoder[encoding]())
-    ])
-  );
+    ]);
+
 
 const RESPONDFILE = (output, URL, location, acceptHeader, encodingHeader) =>
   sourcestream(location, encodingHeader)
