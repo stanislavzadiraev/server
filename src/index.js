@@ -168,6 +168,15 @@ const sourcestream = (location, encodingHeader) =>
     source
     .pipe(encoder[encoding]())
   ])
+  .catch(() =>
+    Promise.reject(
+      Object.assign(Error(
+        'no match item'
+      ), {
+        code: 'ENOENT'
+      })
+    )
+  )
 
 const RESPONDFILE = (output, URL, location, acceptHeader, encodingHeader) =>
   sourcestream(location, encodingHeader)
@@ -243,10 +252,12 @@ const sourcefile = (acceptHeader, location) =>
         available =>
         acceptable === available
       )
-    ) ||
+    )
+  )
+  .catch(() =>
     Promise.reject(
       Object.assign(Error(
-        'no match file'
+        'no match item'
       ), {
         code: 'ENOENT'
       })
