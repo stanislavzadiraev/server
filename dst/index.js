@@ -28280,6 +28280,11 @@ const sourcestream = (location, encodingHeader) =>
       encodingHeader.includes('deflate') && 'deflate' ||
       'undefined',
       source
+    ])
+    .then(([mimetype, encoding, source]) => [
+      mimetype,
+      encoding,
+      source
       .pipe(encoder[encoding]())
     ])
   );
