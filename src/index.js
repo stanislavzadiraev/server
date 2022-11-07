@@ -79,7 +79,7 @@ const responseerror = (status, content) => ({
 
 const RESPONSEEXCUSE = (error, action, URL) =>
   error.code === 'ENOENT' && responseerror(
-    404, `${error.name}: no such file or directory, ${action}: ${URL.pathname}.`
+    404, `${error.name}: ${error.message}, ${action}: ${URL.pathname}.`
   ) ||
   responseerror(
     500, `${error.name}: ${error.message}, ${action}: ${URL.pathname}.`
