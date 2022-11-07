@@ -95,7 +95,7 @@ const RESPONSEREDIRECT = (output, content, location) =>
   )
 
 
-const RESPONSESTREAM = (type, encoding, source) =>
+const RESPONSESTREAM = (output, type, encoding, source) =>
   responseheaders(output, {
     ':status': 200,
     'content-type': type,

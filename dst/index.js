@@ -28202,7 +28202,7 @@ const RESPONSEREDIRECT = (output, content, location) =>
   );
 
 
-const RESPONSESTREAM = (type, encoding, source) =>
+const RESPONSESTREAM = (output, type, encoding, source) =>
   responseheaders(output, {
     ':status': 200,
     'content-type': type,
@@ -28279,7 +28279,7 @@ const sourcestream = (location, encodingHeader) =>
 const RESPONDFILE = (output, URL, location, acceptHeader, encodingHeader) =>
   sourcestream(location, encodingHeader)
   .then(([mimetype, encoding, source]) =>
-    RESPONSESTREAM(output, mimetype, encoding)
+    RESPONSESTREAM(output, mimetype, encoding, source)
   )
   .catch(error =>
     error.code === 'DIRNOTFILE' && RESPONSEREDIRECT(output,
