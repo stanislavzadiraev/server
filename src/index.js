@@ -193,9 +193,9 @@ const sourcestream = (location, encodingHeader) =>
       mimetype,
       encoding,
       STREAMWRAP(source, 'source')
-      .pipe(STREAMWRAP(transit(), 'source transit'))
+//      .pipe(STREAMWRAP(transit(), 'source transit'))
       .pipe(encoder[encoding]())
-      .pipe(STREAMWRAP(transit(), 'output transit'))
+//      .pipe(STREAMWRAP(transit(), 'output transit'))
     ])
   )
 
@@ -242,9 +242,7 @@ const acceptables = acceptHeader =>
   .map(
     acceptItem =>
     `index.${mime.getExtension(acceptItem.type)}`
-  ) || Promise.reject(Error(
-    'accept is empty'
-  ))
+  )
 
 const testdir = location =>
   fs.promises.stat(location)
