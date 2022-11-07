@@ -81,7 +81,7 @@ const RESPONSEEXCUSE = (output, error, action, URL) =>
     404, `${error.name}: no match item, ${action}: ${URL.pathname}.`
   ) ||
   responseerror(output,
-    500, `${error.name}: internal error, ${action}: ${URL.pathname}.`
+    500, `${error.name}: ${error.message}, ${action}: ${URL.pathname}.`
   )
 
 const RESPONSEREDIRECT = (output, content, location) =>
