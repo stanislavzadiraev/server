@@ -28169,6 +28169,9 @@ const responseheaders = headers => ({
 
 const responseblock = content => ({
   sendBody: output =>
+    output.aborted && Promise.reject(Error(
+      `aborted and destroyed`
+    )) ||
     output
     .end(content),
   reject: (output, error) =>
@@ -28213,7 +28216,6 @@ const RESPONSESTREAM = (type, encoding, source) => ({
     )) ||
     Promise.resolve(
       source.pipe(output)
-
     ),
   reject: (output, error) => (
     source
@@ -28283,11 +28285,6 @@ const sourcestream = (location, encodingHeader) =>
         autoClose: true,
         emitClose: true
       })
-      .on('aborted', () =>
-        output.destroy(Error(
-          `aborted and destroyed`
-        ))
-      )
       .on('ready', () => delete sourcestream[location])
       .on('error', () => delete sourcestream[location])
 
@@ -28600,7 +28597,12 @@ const answer = (hostnames, mapHostname, mapPathname, output, headers) =>
     )
     .then(location =>
       (location.slice(-1) === path.sep && RESPONDDIR || RESPONDFILE)(
-        STREAMWRAP(output, 'output'),
+        STREAMWRAP(output, 'output')
+        .on('aborted', () =>
+          output.destroy(Error(
+            `aborted and destroyed`
+          ))
+        ),
         URL,
         location,
         headers['accept'] || '',
