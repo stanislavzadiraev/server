@@ -140,15 +140,6 @@ const transit = () =>
       setImmediate(callback, null, chunk)
   })
 
-const mimetype = location =>
-  `${mime.getType(location) || '*/*'}; charset=utf-8`
-
-const encodes = encodingHeader =>
-  encodingHeader.includes('br') && 'br' ||
-  encodingHeader.includes('gzip') && 'gzip' ||
-  encodingHeader.includes('deflate') && 'deflate' ||
-  'undefined'
-
 const encoder = {
   'br': () => STREAMWRAP(zlib.createBrotliCompress(), 'brotli encoding'),
   'gzip': () => STREAMWRAP(zlib.createGzip(), 'gzip encoding'),
@@ -191,8 +182,11 @@ const sourcestream = (location, encodingHeader) =>
       .on('error', () => delete sourcestream[location])
     )
     .then(source => [
-      mimetype(location),
-      encodes(encodingHeader),
+      `${mime.getType(location) || '*/*'}; charset=utf-8`,
+      encodingHeader.includes('br') && 'br' ||
+      encodingHeader.includes('gzip') && 'gzip' ||
+      encodingHeader.includes('deflate') && 'deflate' ||
+      'undefined',
       source
     ])
     .then(([mimetype, encoding, source]) => [
