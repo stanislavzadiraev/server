@@ -179,7 +179,7 @@ const RESPONDFILE = (output, URL, location, acceptHeader, encodingHeader) =>
       `${error.name}: not a file, open: ${URL.pathname}.`,
       (URL.pathname = URL.pathname.concat('/'), URL.format())
     ) ||
-    RESPONSEEXCUSE(error, 'open', URL)
+    RESPONSEEXCUSE(output, error, 'open', URL)
   )
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -267,7 +267,7 @@ const RESPONDDIR = (output, URL, location, acceptHeader, encodingHeader) =>
       `${error.name}: not a directory, scandir: ${URL.pathname}`,
       ((URL.pathname = URL.pathname.slice(0, -1)), URL.format())
     ) ||
-    RESPONSEEXCUSE(error, 'scan', URL)
+    RESPONSEEXCUSE(output, error, 'scan', URL)
   )
 
 ////////////////////////////////////////////////////////////////////////////////
