@@ -62,10 +62,10 @@ const responseblock = (output, content) =>
     output.aborted && Promise.reject(Error(
       `aborted`
     )) ||
-    Promise.resolve(
+    Promise.resolve((
       output
-      .end(content)
-    )
+      .end(content), output
+    ))
 
 const responseerror = (output, status, content) =>
   responseheaders(output, {
@@ -105,9 +105,9 @@ const RESPONSESTREAM = (type, encoding, source) =>
     output.aborted && Promise.reject(Error(
       `aborted`
     )) ||
-    Promise.resolve(
-      source.pipe(output)
-    )
+    Promise.resolve((
+      source.pipe(output), output
+    ))
   )
 
 ////////////////////////////////////////////////////////////////////////////////
