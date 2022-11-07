@@ -44,8 +44,7 @@ const STREAMWRAP = (stream, name) =>
 
 ////////////////////////////////////////////////////////////////////////////////
 
-const responseheaders = headers => ({
-  sendHead: output =>
+const responseheaders = (output, headers) =>
     (output._writableState.finished || output._writableState.destroyed) && Promise.reject(Error(
       'wrong output state'
     )) ||
@@ -58,10 +57,8 @@ const responseheaders = headers => ({
     Promise.resolve((
       output.respond(headers), output
     ))
-})
 
-const responseblock = content => ({
-  sendBody: output =>
+const responseblock = (output, content) =>
     output.aborted && Promise.reject(Error(
       `aborted`
     )) ||
@@ -69,54 +66,48 @@ const responseblock = content => ({
       output
       .end(content)
     )
-})
 
-const responseerror = (status, content) => ({
-  ...responseheaders({
+const responseerror = (output, status, content) =>
+  responseheaders(output, {
     ':status': status,
     'content-type': 'text/plain;charset=utf-8'
-  }),
-  ...responseblock(content)
-})
+  })
+  .then(output =>
+    responseblock(output, content)
+  )
 
-const RESPONSEEXCUSE = (error, action, URL) =>
-  error.code === 'ENOENT' && responseerror(
+const RESPONSEEXCUSE = (output, error, action, URL) =>
+  error.code === 'ENOENT' && responseerror(output,
     404, `${error.name}: no match item, ${action}: ${URL.pathname}.`
   ) ||
-  responseerror(
+  responseerror(output,
     500, `${error.name}: internal error, ${action}: ${URL.pathname}.`
   )
 
-const RESPONSEREDIRECT = (content, location) => ({
-  ...responseheaders({
+const RESPONSEREDIRECT = (output, content, location) =>
+  responseheaders(output, {
     ':status': 301,
     'content-type': 'text/plain;charset=utf-8',
     'location': location
-  }),
-  ...responseblock(content)
-})
+  })
+  .then(output =>
+    responseblock(output, content)
+  )
 
-const RESPONSESTREAM = (type, encoding, source) => ({
-  ...responseheaders({
+
+const RESPONSESTREAM = (type, encoding, source) =>
+  responseheaders(output, {
     ':status': 200,
     'content-type': type,
     'content-encoding': encoding
-  }),
-  sendBody: output =>
+  })
+  .then(output =>
     output.aborted && Promise.reject(Error(
       `aborted`
     )) ||
     Promise.resolve(
       source.pipe(output)
     )
-})
-
-const RESPOND = (output, response) =>
-  response
-  .sendHead(output)
-  .then(output =>
-    response
-    .sendBody(output)
   )
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -180,16 +171,16 @@ const sourcestream = (location, encodingHeader) =>
 
 const RESPONDFILE = (output, URL, location, acceptHeader, encodingHeader) =>
   sourcestream(location, encodingHeader)
-  .then(([mimetype, encoding, source]) => RESPOND(output,
-    RESPONSESTREAM(mimetype, encoding, source)
-  ))
-  .catch(error => RESPOND(output,
-    error.code === 'DIRNOTFILE' && RESPONSEREDIRECT(
+  .then(([mimetype, encoding, source]) =>
+    RESPONSESTREAM(output, mimetype, encoding, source)
+  )
+  .catch(error =>
+    error.code === 'DIRNOTFILE' && RESPONSEREDIRECT(output,
       `${error.name}: not a file, open: ${URL.pathname}.`,
       (URL.pathname = URL.pathname.concat('/'), URL.format())
     ) ||
     RESPONSEEXCUSE(error, 'open', URL)
-  ))
+  )
 ////////////////////////////////////////////////////////////////////////////////
 
 const acceptables = acceptHeader =>
@@ -271,13 +262,13 @@ const RESPONDDIR = (output, URL, location, acceptHeader, encodingHeader) =>
     acceptHeader,
     encodingHeader
   ))
-  .catch(error => RESPOND(output,
-    error.code === 'FILENOTDIR' && RESPONSEREDIRECT(
+  .catch(error =>
+    error.code === 'FILENOTDIR' && RESPONSEREDIRECT(output,
       `${error.name}: not a directory, scandir: ${URL.pathname}`,
       ((URL.pathname = URL.pathname.slice(0, -1)), URL.format())
     ) ||
     RESPONSEEXCUSE(error, 'scan', URL)
-  ))
+  )
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -482,9 +473,9 @@ const answer = (hostnames, mapHostname, mapPathname, output, headers) =>
       )
     )
   )
-  .catch(error => error && RESPOND(output,
-      RESPONSEEXCUSE(error, `wrong request`, {})
-  ))
+  .catch(error =>
+      RESPONSEEXCUSE(output, error, `wrong request`, {})
+  )
 
 const INDEX = ({
     hostnames = ['localhost'],
