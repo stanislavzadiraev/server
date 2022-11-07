@@ -78,7 +78,7 @@ const responseerror = (output, status, content) =>
 
 const RESPONSEEXCUSE = (output, error, action, URL) =>
   error.code === 'ENOENT' && responseerror(output,
-    404, `${error.name}: no match item, ${action}: ${URL.pathname}.`
+    404, `${error.name}: ${error.message} ${action}: ${URL.pathname}.`
   ) ||
   responseerror(output,
     500, `${error.name}: ${error.message}, ${action}: ${URL.pathname}.`
