@@ -28499,7 +28499,7 @@ const parse = headers =>
       Error('wrong request'),
       {code: 'WRREQ'}
     )
-  );
+  ) ||
   Promise.resolve(url.parse(
     `${headers[':scheme']}://${headers[':authority']}${headers[':path']}`
   ));
