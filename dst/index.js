@@ -28137,10 +28137,10 @@ const STREAMWRAP = (stream, name) =>
     log(`Warning: ${name} stream, ${error.message}.`)
   )
   .on('unpipe', source =>
-    source.destroy(Error(`destroying`))
+    source.destroy(Error(`unpiped, destroying`))
   )
   .on('aborted', () =>
-    stream.destroy(Error(`destroying`))
+    stream.destroy(Error(`aborted, destroying`))
   );
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -28173,11 +28173,25 @@ const RESPONSEEXCUSE = (output, error, action, URL) =>
       'text/plain;charset=utf-8',
     'location':
       error.code === 'DIRNOTFILE' && (URL.pathname = URL.pathname.concat('/'), URL.format()) ||
-      error.code === 'FILENOTDIR' && (URL.pathname = URL.pathname.slice(0, -1), URL.format()) ||
+      error.code === 'FILENOTDIR' &&(URL.pathname = URL.pathname.slice(0, -1), URL.format()) ||
       undefined
   })
   .then(output => (
     output.end(`${error.name}: ${error.message}, ${action}: ${URL.pathname}.`),
+    undefined
+  ));
+
+const RESPONSEREDIRECT = (output, content, location) =>
+  responseheaders(output, {
+    ':status':
+      301,
+    'content-type':
+      'text/plain;charset=utf-8',
+    'location':
+      location
+  })
+  .then(output =>(
+    output.end(content),
     undefined
   ));
 
@@ -28261,6 +28275,10 @@ const RESPONDFILE = (output, URL, location, acceptHeader, encodingHeader) =>
     RESPONSESTREAM(output, mimetype, encoding, source)
   )
   .catch(error =>
+    error.code === 'DIRNOTFILE' && RESPONSEREDIRECT(output,
+      `${error.name}: not a file, open: ${URL.pathname}.`,
+      (URL.pathname = URL.pathname.concat('/'), URL.format())
+    ) ||
     RESPONSEEXCUSE(output, error, 'open', URL)
   );
 ////////////////////////////////////////////////////////////////////////////////
@@ -28339,6 +28357,10 @@ const RESPONDDIR = (output, URL, location, acceptHeader, encodingHeader) =>
     encodingHeader
   ))
   .catch(error =>
+    error.code === 'FILENOTDIR' && RESPONSEREDIRECT(output,
+      `${error.name}: not a directory, scandir: ${URL.pathname}`,
+      ((URL.pathname = URL.pathname.slice(0, -1)), URL.format())
+    ) ||
     RESPONSEEXCUSE(output, error, 'scan', URL)
   );
 
