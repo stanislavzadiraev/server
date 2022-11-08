@@ -28140,7 +28140,10 @@ const STREAMWRAP = (stream, name) =>
     source.destroy(Error(`unpiped, destroying`))
   )
   .on('aborted', () =>
-    stream.destroy(Error(`aborted and destroyed`))
+    stream.destroy(Error(`aborted, destroying`))
+  )
+  .on('close', () =>
+    log(`Warning: ${name} stream, closed`)
   );
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -28203,9 +28206,9 @@ const transit = () =>
   });
 
 const encoder = {
-  'br': () => STREAMWRAP(zlib.createBrotliCompress(), 'brotli encoding'),
-  'gzip': () => STREAMWRAP(zlib.createGzip(), 'gzip encoding'),
-  'deflate': () => STREAMWRAP(zlib.createDeflate(), 'deflate encoding'),
+  'br': () => STREAMWRAP(zlib.createBrotliCompress(), 'brotli'),
+  'gzip': () => STREAMWRAP(zlib.createGzip(), 'gzip'),
+  'deflate': () => STREAMWRAP(zlib.createDeflate(), 'deflate'),
   'undefined': () => STREAMWRAP(transit(), 'transit')
 };
 
