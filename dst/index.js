@@ -28212,6 +28212,10 @@ const encoder = {
 
 const testfile = location =>
   fs.promises.stat(location)
+  .catch(err => (
+    err.code == 'ENOENT' && (err.message = 'no match item'),
+    Promise.reject(err)
+  ))
   .then(stat =>
     stat.isFile() && Promise.resolve(
       location
@@ -28223,11 +28227,7 @@ const testfile = location =>
         code: 'DIRNOTFILE'
       })
     )
-  )
-  .catch(err => (
-    err.code == 'ENOENT' && (err.message = 'no match item'),
-    Promise.reject(err)
-  ));
+  );
 
 const sourcestream = (location, encodingHeader) =>
   testfile(location)
@@ -28294,6 +28294,10 @@ const acceptables = acceptHeader =>
 
 const testdir = location =>
   fs.promises.stat(location)
+  .catch(err => (
+    err.code == 'ENOENT' && (err.message = 'no match item'),
+    Promise.reject(err)
+  ))
   .then(stat =>
     stat.isDirectory() && Promise.resolve(
       location
@@ -28305,11 +28309,7 @@ const testdir = location =>
         code: 'FILENOTDIR'
       })
     )
-  )
-  .catch(err => (
-    err.code == 'ENOENT' && (err.message = 'no match item'),
-    Promise.reject(err)
-  ));
+  );
 
 const sourcefile = (acceptHeader, location) =>
   testdir(location)
@@ -28317,13 +28317,11 @@ const sourcefile = (acceptHeader, location) =>
     fs.promises.readdir(location, 'utf8')
   )
   .then(availables =>
-    Promise.resolve(
-      acceptables(acceptHeader).find(
-        acceptable =>
-        availables.find(
-          available =>
-          acceptable === available
-        )
+    acceptables(acceptHeader).find(
+      acceptable =>
+      availables.find(
+        available =>
+        acceptable === available
       )
     ) ||
     Promise.reject(Error(
