@@ -32,9 +32,8 @@ const STREAMWRAP = (stream, name) =>
   .on('unpipe', source =>
     source.destroy(Error(`unpiped, destroying`))
   )
-
-  .on('close', () =>
-    log(`Warning: ${name} stream, closed`)
+  .on('aborted', () =>
+    stream.destroy(Error(`aborted, destroying`))
   )
 
 ////////////////////////////////////////////////////////////////////////////////
