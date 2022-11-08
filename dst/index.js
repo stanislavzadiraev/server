@@ -28164,30 +28164,31 @@ const responseheaders = (output, headers) =>
 
 const RESPONSEEXCUSE = (output, error, action, URL) =>
   responseheaders(output, {
-    ':status': error.code === 'ENOENT' && 404 || 500,
-    'content-type': 'text/plain;charset=utf-8'
+    ':status':
+      error.code === 'ENOENT' && 404 ||
+      error.code === 'DIRNOTFILE' && 301 ||
+      error.code === 'FILENOTDIR' && 301 ||
+      500,
+    'content-type':
+      'text/plain;charset=utf-8',
+    'location':
+      error.code === 'DIRNOTFILE' && (URL.pathname = URL.pathname.concat('/'), URL.format()) ||
+      error.code === 'FILENOTDIR' &&(URL.pathname = URL.pathname.slice(0, -1), URL.format()) ||
+      undefined
   })
   .then(output => (
     output.end(`${error.name}: ${error.message}, ${action}: ${URL.pathname}.`),
     undefined
   ));
 
-const RESPONSEREDIRECT = (output, content, location) =>
-  responseheaders(output, {
-    ':status': 301,
-    'content-type': 'text/plain;charset=utf-8',
-    'location': location
-  })
-  .then(output =>(
-    output.end(content),
-    undefined
-  ));
-
 const RESPONSESTREAM = (output, type, encoding, source) =>
   responseheaders(output, {
-    ':status': 200,
-    'content-type': type,
-    'content-encoding': encoding
+    ':status':
+      200,
+    'content-type':
+      type,
+    'content-encoding':
+      encoding
   })
   .then(output => (
     source.pipe(output),
@@ -28260,10 +28261,6 @@ const RESPONDFILE = (output, URL, location, acceptHeader, encodingHeader) =>
     RESPONSESTREAM(output, mimetype, encoding, source)
   )
   .catch(error =>
-    error.code === 'DIRNOTFILE' && RESPONSEREDIRECT(output,
-      `${error.name}: not a file, open: ${URL.pathname}.`,
-      (URL.pathname = URL.pathname.concat('/'), URL.format())
-    ) ||
     RESPONSEEXCUSE(output, error, 'open', URL)
   );
 ////////////////////////////////////////////////////////////////////////////////
@@ -28342,10 +28339,6 @@ const RESPONDDIR = (output, URL, location, acceptHeader, encodingHeader) =>
     encodingHeader
   ))
   .catch(error =>
-    error.code === 'FILENOTDIR' && RESPONSEREDIRECT(output,
-      `${error.name}: not a directory, scandir: ${URL.pathname}`,
-      ((URL.pathname = URL.pathname.slice(0, -1)), URL.format())
-    ) ||
     RESPONSEEXCUSE(output, error, 'scan', URL)
   );
 
