@@ -28153,7 +28153,7 @@ const STREAMWRAP = (stream, name) =>
 
 const responseheaders = (output, headers) =>
     output.aborted && Promise.reject(Error(
-      `aborted`
+      `output stream aborted`
     )) ||
     (output._writableState.finished || output._writableState.destroyed) && Promise.reject(Error(
       'wrong output state'
@@ -28224,13 +28224,10 @@ const testfile = location =>
       ), {
         code: 'DIRNOTFILE'
       })
-    ) ||
-    Promise.reject(Error(
-      'illegal operation'
-    ))
+    )
   )
   .catch(err => (
-    err.message = 'no match item',
+    err.code == 'ENOENT' && (err.message = 'no match item'),
     Promise.reject(err)
   ));
 
@@ -28316,13 +28313,10 @@ const testdir = location =>
       ), {
         code: 'FILENOTDIR'
       })
-    ) ||
-    Promise.reject(Error(
-      'illegal operation'
-    ))
+    )
   )
   .catch(err => (
-    err.message = 'no match item',
+    err.code == 'ENOENT' && (err.message = 'no match item'),
     Promise.reject(err)
   ));
 
