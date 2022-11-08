@@ -28320,7 +28320,7 @@ const sourcefile = (acceptHeader, location) =>
       indexnames(acceptHeader)
     ])
   )
-  .then((availables, acceptables) =>
+  .then(([availables, acceptables]) =>
     acceptables.find(
       acceptable =>
       availables.find(
