@@ -28173,9 +28173,10 @@ const RESPONSEEXCUSE = (output, error, action, URL) =>
     ':status': error.code === 'ENOENT' && 404 || 500,
     'content-type': 'text/plain;charset=utf-8'
   })
-  .then(output =>
-    (output.end(`${error.name}: ${error.message}, ${action}: ${URL.pathname}.`), output)
-  );
+  .then(output => (
+    output.end(`${error.name}: ${error.message}, ${action}: ${URL.pathname}.`),
+    undefined
+  ));
 
 const RESPONSEREDIRECT = (output, content, location) =>
   responseheaders(output, {
@@ -28183,9 +28184,10 @@ const RESPONSEREDIRECT = (output, content, location) =>
     'content-type': 'text/plain;charset=utf-8',
     'location': location
   })
-  .then(output =>
-    (output.end(content), output)
-  );
+  .then(output =>(
+    output.end(content),
+    undefined
+  ));
 
 const RESPONSESTREAM = (output, type, encoding, source) =>
   responseheaders(output, {
@@ -28193,9 +28195,10 @@ const RESPONSESTREAM = (output, type, encoding, source) =>
     'content-type': type,
     'content-encoding': encoding
   })
-  .then(output =>
-      (source.pipe(output), output)
-  );
+  .then(output => (
+    source.pipe(output),
+    undefined
+  ));
 
 ////////////////////////////////////////////////////////////////////////////////
 
