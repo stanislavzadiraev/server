@@ -28188,7 +28188,7 @@ const RESPONDEXCUSE = (output, error, action, URL) =>
       undefined
   })
   .then(output => (
-    output.end(`${error.name}: ${error.message}, ${action}: ${URL.hostname}/${URL.pathname}.`),
+    output.end(`${error.name}: ${error.message}, ${action}: ${URL.hostname}${URL.pathname}.`),
     undefined
   ));
 
@@ -28486,6 +28486,11 @@ const create = (hostnames, mapHostname, mapSignname, port) => (
   ))
 );
 
+const geturl = headers =>
+  url.parse(
+    `${headers[':scheme']}://${headers[':authority']}${headers[':path']}`
+  );
+
 const parse = headers =>
   (
     headers[':method'] === 'GET' ||
@@ -28494,9 +28499,7 @@ const parse = headers =>
     headers[':path']
   ) &&
   Promise.resolve(
-    url.parse(
-      `${headers[':scheme']}://${headers[':authority']}${headers[':path']}`
-    )
+    geturl(headers)
   ) ||
   Promise.reject(Object.assign(
       Error('wrong request'),
@@ -28553,7 +28556,7 @@ const answer = (hostnames, mapHostname, mapPathname, output, headers) =>
     )
   )
   .catch(error =>
-    RESPONDEXCUSE(output, error, `parse request`, url.parse(`${headers[':host']}/${headers[':path']}`))
+    RESPONDEXCUSE(output, error, `parse request`, geturl(headers))
   );
 
 const INDEX = ({
