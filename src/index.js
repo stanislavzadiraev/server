@@ -61,16 +61,13 @@ const responseheaders = (output, headers) =>
       output.respond(headers), output
     ))
 
-const responseblock = (output, content) =>
-      (output.end(content), output)
-
 const RESPONSEEXCUSE = (output, error, action, URL) =>
   responseheaders(output, {
     ':status': error.code === 'ENOENT' && 404 || 500,
     'content-type': 'text/plain;charset=utf-8'
   })
   .then(output =>
-    responseblock(output, `${error.name}: ${error.message}, ${action}: ${URL.pathname}.`)
+    (output.end(`${error.name}: ${error.message}, ${action}: ${URL.pathname}.`), output)
   )
 
 const RESPONSEREDIRECT = (output, content, location) =>
@@ -80,7 +77,7 @@ const RESPONSEREDIRECT = (output, content, location) =>
     'location': location
   })
   .then(output =>
-    responseblock(output, content)
+    (output.end(content), output)
   )
 
 const RESPONSESTREAM = (output, type, encoding, source) =>
