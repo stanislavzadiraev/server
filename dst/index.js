@@ -28228,7 +28228,11 @@ const testfile = location =>
     Promise.reject(Error(
       'illegal operation'
     ))
-  );
+  )
+  .catch(err => (
+    err.message = 'no match item',
+    Promise.reject(err)
+  ));
 
 const sourcestream = (location, encodingHeader) =>
   testfile(location)
@@ -28316,7 +28320,11 @@ const testdir = location =>
     Promise.reject(Error(
       'illegal operation'
     ))
-  );
+  )
+  .catch(err => (
+    err.message = 'no match item',
+    Promise.reject(err)
+  ));
 
 const sourcefile = (acceptHeader, location) =>
   testdir(location)

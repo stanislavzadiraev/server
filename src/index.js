@@ -122,6 +122,10 @@ const testfile = location =>
       'illegal operation'
     ))
   )
+  .catch(err => (
+    err.message = 'no match item',
+    Promise.reject(err)
+  ))
 
 const sourcestream = (location, encodingHeader) =>
   testfile(location)
@@ -210,6 +214,10 @@ const testdir = location =>
       'illegal operation'
     ))
   )
+  .catch(err => (
+    err.message = 'no match item',
+    Promise.reject(err)
+  ))
 
 const sourcefile = (acceptHeader, location) =>
   testdir(location)
