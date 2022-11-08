@@ -28136,6 +28136,9 @@ const STREAMWRAP = (stream, name) =>
   .on('error', error =>
     log(`Warning: ${name} stream, ${error.message}.`)
   )
+  .on('unpipe', source =>
+    source.destroy(Error(`unpiped, destroying`))
+  )
 
   .on('close', () =>
     log(`Warning: ${name} stream, closed`)
