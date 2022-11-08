@@ -28267,7 +28267,7 @@ const RESPONDFILE = (output, URL, location, acceptHeader, encodingHeader) =>
   );
 ////////////////////////////////////////////////////////////////////////////////
 
-const acceptables = acceptHeader =>
+const indexnames = acceptHeader =>
   acceptHeader.split(',')
   .map(acceptItem =>
     acceptItem
@@ -28315,10 +28315,13 @@ const testdir = location =>
 const sourcefile = (acceptHeader, location) =>
   testdir(location)
   .then(location =>
-    fs.promises.readdir(location, 'utf8')
+    Promise.all([
+      fs.promises.readdir(location, 'utf8'),
+      indexnames(acceptHeader)
+    ])
   )
-  .then(availables =>
-    acceptables(acceptHeader).find(
+  .then((availables, acceptables) =>
+    acceptables.find(
       acceptable =>
       availables.find(
         available =>
@@ -28326,9 +28329,9 @@ const sourcefile = (acceptHeader, location) =>
       )
     )
   )
-  .then(acceptable =>
-    acceptable && Promise.resolve(
-      acceptable
+  .then(filename =>
+    filename && Promise.resolve(
+      filename
     ) ||
     Promise.reject(Error(
      'no match file'
