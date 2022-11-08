@@ -28212,10 +28212,6 @@ const encoder = {
 
 const testfile = location =>
   fs.promises.stat(location)
-  .catch(err => (
-    err.code == 'ENOENT' && (err.message = 'no match item'),
-    Promise.reject(err)
-  ))
   .then(stat =>
     stat.isFile() && Promise.resolve(
       location
@@ -28227,7 +28223,11 @@ const testfile = location =>
         code: 'DIRNOTFILE'
       })
     )
-  );
+  )
+  .catch(err => (
+    err.code == 'ENOENT' && (err.message = 'no match item'),
+    Promise.reject(err)
+  ));
 
 const sourcestream = (location, encodingHeader) =>
   testfile(location)
@@ -28235,10 +28235,7 @@ const sourcestream = (location, encodingHeader) =>
     fs.promises.open(location)
   )
   .then(fh =>
-    STREAMWRAP(fh.createReadStream(
-      { autoClose: true, emitClose: true }),
-      'source'
-    )
+    STREAMWRAP(fh.createReadStream({autoClose: true, emitClose: true}), 'source')
   )
   .then(source => [
     `${mime.getType(location) || '*/*'}; charset=utf-8`,
@@ -28297,10 +28294,6 @@ const acceptables = acceptHeader =>
 
 const testdir = location =>
   fs.promises.stat(location)
-  .catch(err => (
-    err.code == 'ENOENT' && (err.message = 'no match item'),
-    Promise.reject(err)
-  ))
   .then(stat =>
     stat.isDirectory() && Promise.resolve(
       location
@@ -28312,7 +28305,11 @@ const testdir = location =>
         code: 'FILENOTDIR'
       })
     )
-  );
+  )
+  .catch(err => (
+    err.code == 'ENOENT' && (err.message = 'no match item'),
+    Promise.reject(err)
+  ));
 
 const sourcefile = (acceptHeader, location) =>
   testdir(location)
