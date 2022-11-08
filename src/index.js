@@ -67,6 +67,7 @@ const responseheaders = (output, headers) =>
 const RESPONDEXCUSE = (output, error, action, URL) =>
   responseheaders(output, {
     ':status':
+      error.code === 'WRREQ' && 400||
       error.code === 'ENOENT' && 404 ||
       error.code === 'DIRNOTFILE' && 301 ||
       error.code === 'FILENOTDIR' && 301 ||
@@ -119,11 +120,10 @@ const testfile = location =>
       location
     ) ||
     stat.isDirectory() && Promise.reject(
-      Object.assign(Error(
-        'illegal operation'
-      ), {
-        code: 'DIRNOTFILE'
-      })
+      Object.assign(
+        Error('illegal operation'),
+        {code: 'DIRNOTFILE'}
+      )
     )
   )
 
@@ -197,11 +197,10 @@ const testdir = location =>
       location
     ) ||
     stat.isFile() && Promise.reject(
-      Object.assign(Error(
-        'sillegal operation'
-      ), {
-        code: 'FILENOTDIR'
-      })
+      Object.assign(
+        Error('sillegal operation'),
+        {code: 'FILENOTDIR'}
+      )
     )
   )
 
@@ -388,9 +387,12 @@ const parse = headers =>
     !headers[':authority'] ||
     !headers[':path']
   ) &&
-  Promise.reject(Error(
-    'wrong request'
-  )) ||
+  Promise.reject(
+    Object.assign(
+      Error('wrong request'),
+      {code: 'WRREQ'}
+    )
+  )
   Promise.resolve(url.parse(
     `${headers[':scheme']}://${headers[':authority']}${headers[':path']}`
   ))
@@ -402,25 +404,24 @@ const getlocation = (URL, hostnames, mapHostname, mapPathname) =>
       pathname: path.normalize(URL.pathname)
     })
     .map(([key, value]) =>
-      (!value || !value.length) &&
+      value && value.length &&
+      Promise.resolve(value) ||
       Promise.reject(Error(
         `empty ${key}`
-      )) ||
-      Promise.resolve(value)
+      ))
     )
   )
   .then(([hostname, pathname]) =>
-    !(hostnames.length === 0 || hostnames.includes(hostname)) &&
-    Promise.reject(Error(
-      'wrong hostname'
-    )) ||
+    hostnames.includes(hostname) &&
     Promise.resolve(
       path.join(
         mapHostname(hostname, pathname),
         mapPathname(pathname, hostname)
-      ) ||
-      ''
-    )
+      )
+    ) ||
+    Promise.reject(Error(
+      'wrong hostname'
+    ))
   )
 
 const answer = (hostnames, mapHostname, mapPathname, output, headers) =>
