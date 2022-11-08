@@ -28145,6 +28145,15 @@ const STREAMWRAP = (stream, name) =>
 
 ////////////////////////////////////////////////////////////////////////////////
 
+const TESTSTAT = location =>
+  fs.promises.stat(location)
+  .catch(err => (
+    err.code == 'ENOENT' && (err.message = 'no match item'),
+    Promise.reject(err)
+  ));
+
+////////////////////////////////////////////////////////////////////////////////
+
 const responseheaders = (output, headers) =>
   output.aborted && Promise.reject(Error(
     `output stream aborted`
@@ -28211,11 +28220,7 @@ const encoder = {
 };
 
 const testfile = location =>
-  fs.promises.stat(location)
-  .catch(err => (
-    err.code == 'ENOENT' && (err.message = 'no match item'),
-    Promise.reject(err)
-  ))
+  TESTSTAT(location)
   .then(stat =>
     stat.isFile() && Promise.resolve(
       location
@@ -28293,11 +28298,7 @@ const acceptables = acceptHeader =>
   );
 
 const testdir = location =>
-  fs.promises.stat(location)
-  .catch(err => (
-    err.code == 'ENOENT' && (err.message = 'no match item'),
-    Promise.reject(err)
-  ))
+  TESTSTAT(location)
   .then(stat =>
     stat.isDirectory() && Promise.resolve(
       location
@@ -28323,9 +28324,14 @@ const sourcefile = (acceptHeader, location) =>
         available =>
         acceptable === available
       )
+    )
+  )
+  .then(acceptable =>
+    acceptable && Promise.resolve(
+      acceptable
     ) ||
     Promise.reject(Error(
-      'no match file'
+     'no match file'
     ))
   );
 
