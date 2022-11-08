@@ -61,7 +61,8 @@ const responseheaders = (output, headers) =>
     'headers already sent'
   )) ||
   Promise.resolve((
-    output.respond(headers), output
+    output.respond(headers),
+    output
   ))
 
 const RESPONDEXCUSE = (output, error, action, URL) =>
@@ -80,7 +81,7 @@ const RESPONDEXCUSE = (output, error, action, URL) =>
       undefined
   })
   .then(output => (
-    output.end(`${error.name}: ${error.message}, ${action}: ${URL.pathname}.`),
+    output.end(`${error.name}: ${error.message}, ${action}: ${URL.hostname}/${URL.pathname}.`),
     undefined
   ))
 
@@ -119,12 +120,10 @@ const testfile = location =>
     stat.isFile() && Promise.resolve(
       location
     ) ||
-    stat.isDirectory() && Promise.reject(
-      Object.assign(
+    stat.isDirectory() && Promise.reject(Object.assign(
         Error('illegal operation'),
         {code: 'DIRNOTFILE'}
-      )
-    )
+    ))
   )
 
 const sourcestream = (location, encodingHeader) =>
@@ -196,12 +195,10 @@ const testdir = location =>
     stat.isDirectory() && Promise.resolve(
       location
     ) ||
-    stat.isFile() && Promise.reject(
-      Object.assign(
+    stat.isFile() && Promise.reject(Object.assign(
         Error('sillegal operation'),
         {code: 'FILENOTDIR'}
-      )
-    )
+    ))
   )
 
 const sourcefile = (acceptHeader, location) =>
@@ -246,7 +243,9 @@ const RESPONDDIR = (output, URL, location, acceptHeader, encodingHeader) =>
 ////////////////////////////////////////////////////////////////////////////////
 
 const SELFSIGNED = hostnames =>
-  Promise.resolve(forge.pki.rsa.generateKeyPair(2048))
+  Promise.resolve(
+    forge.pki.rsa.generateKeyPair(2048)
+  )
   .then(keys => [
     keys,
     Object.assign(forge.pki.createCertificate(), {
@@ -382,20 +381,21 @@ const create = (hostnames, mapHostname, mapSignname, port) => (
 
 const parse = headers =>
   (
-    headers[':method'] !== 'GET' ||
-    !headers[':scheme'] ||
-    !headers[':authority'] ||
-    !headers[':path']
+    headers[':method'] === 'GET' ||
+    headers[':scheme'] ||
+    headers[':authority'] ||
+    headers[':path']
   ) &&
-  Promise.reject(
-    Object.assign(
-      Error('wrong request'),
-      {code: 'WRREQ'}
+  Promise.resolve(
+    url.parse(
+      `${headers[':scheme']}://${headers[':authority']}${headers[':path']}`
     )
   ) ||
-  Promise.resolve(url.parse(
-    `${headers[':scheme']}://${headers[':authority']}${headers[':path']}`
+  Promise.reject(Object.assign(
+      Error('wrong request'),
+      {code: 'WRREQ'}
   ))
+
 
 const getlocation = (URL, hostnames, mapHostname, mapPathname) =>
   Promise.all(
@@ -404,8 +404,10 @@ const getlocation = (URL, hostnames, mapHostname, mapPathname) =>
       pathname: path.normalize(URL.pathname)
     })
     .map(([key, value]) =>
-      value && value.length &&
-      Promise.resolve(value) ||
+      value &&
+      Promise.resolve(
+        value
+      ) ||
       Promise.reject(Error(
         `empty ${key}`
       ))
@@ -444,7 +446,7 @@ const answer = (hostnames, mapHostname, mapPathname, output, headers) =>
     )
   )
   .catch(error =>
-    RESPONDEXCUSE(output, error, `parse request`, {})
+    RESPONDEXCUSE(output, error, `parse request`, url.parse(`${headers[':host']}/${headers[':path']}`))
   )
 
 const INDEX = ({
