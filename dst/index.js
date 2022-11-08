@@ -28146,23 +28146,23 @@ const STREAMWRAP = (stream, name) =>
 ////////////////////////////////////////////////////////////////////////////////
 
 const responseheaders = (output, headers) =>
-    output.aborted && Promise.reject(Error(
-      `output stream aborted`
-    )) ||
-    (output._writableState.finished || output._writableState.destroyed) && Promise.reject(Error(
-      'wrong output state'
-    )) ||
-    (!headers[':status'] || !headers['content-type']) && Promise.reject(Error(
-      'wrong respond headers'
-    )) ||
-    output.headersSent && Promise.reject(Error(
-      'headers already sent'
-    )) ||
-    Promise.resolve((
-      output.respond(headers), output
-    ));
+  output.aborted && Promise.reject(Error(
+    `output stream aborted`
+  )) ||
+  (output._writableState.finished || output._writableState.destroyed) && Promise.reject(Error(
+    'wrong output state'
+  )) ||
+  (!headers[':status'] || !headers['content-type']) && Promise.reject(Error(
+    'wrong respond headers'
+  )) ||
+  output.headersSent && Promise.reject(Error(
+    'headers already sent'
+  )) ||
+  Promise.resolve((
+    output.respond(headers), output
+  ));
 
-const RESPONSEEXCUSE = (output, error, action, URL) =>
+const RESPONDEXCUSE = (output, error, action, URL) =>
   responseheaders(output, {
     ':status':
       error.code === 'ENOENT' && 404 ||
@@ -28181,7 +28181,7 @@ const RESPONSEEXCUSE = (output, error, action, URL) =>
     undefined
   ));
 
-const RESPONSESTREAM = (output, type, encoding, source) =>
+const RESPONDSTREAM = (output, type, encoding, source) =>
   responseheaders(output, {
     ':status':
       200,
@@ -28212,6 +28212,10 @@ const encoder = {
 
 const testfile = location =>
   fs.promises.stat(location)
+  .catch(err => (
+    err.code == 'ENOENT' && (err.message = 'no match item'),
+    Promise.reject(err)
+  ))
   .then(stat =>
     stat.isFile() && Promise.resolve(
       location
@@ -28223,11 +28227,7 @@ const testfile = location =>
         code: 'DIRNOTFILE'
       })
     )
-  )
-  .catch(err => (
-    err.code == 'ENOENT' && (err.message = 'no match item'),
-    Promise.reject(err)
-  ));
+  );
 
 const sourcestream = (location, encodingHeader) =>
   testfile(location)
@@ -28258,10 +28258,10 @@ const sourcestream = (location, encodingHeader) =>
 const RESPONDFILE = (output, URL, location, acceptHeader, encodingHeader) =>
   sourcestream(location, encodingHeader)
   .then(([mimetype, encoding, source]) =>
-    RESPONSESTREAM(output, mimetype, encoding, source)
+    RESPONDSTREAM(output, mimetype, encoding, source)
   )
   .catch(error =>
-    RESPONSEEXCUSE(output, error, 'open', URL)
+    RESPONDEXCUSE(output, error, 'open', URL)
   );
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -28297,6 +28297,10 @@ const acceptables = acceptHeader =>
 
 const testdir = location =>
   fs.promises.stat(location)
+  .catch(err => (
+    err.code == 'ENOENT' && (err.message = 'no match item'),
+    Promise.reject(err)
+  ))
   .then(stat =>
     stat.isDirectory() && Promise.resolve(
       location
@@ -28308,11 +28312,7 @@ const testdir = location =>
         code: 'FILENOTDIR'
       })
     )
-  )
-  .catch(err => (
-    err.code == 'ENOENT' && (err.message = 'no match item'),
-    Promise.reject(err)
-  ));
+  );
 
 const sourcefile = (acceptHeader, location) =>
   testdir(location)
@@ -28320,11 +28320,13 @@ const sourcefile = (acceptHeader, location) =>
     fs.promises.readdir(location, 'utf8')
   )
   .then(availables =>
-    acceptables(acceptHeader).find(
-      acceptable =>
-      availables.find(
-        available =>
-        acceptable === available
+    Promise.resolve(
+      acceptables(acceptHeader).find(
+        acceptable =>
+        availables.find(
+          available =>
+          acceptable === available
+        )
       )
     ) ||
     Promise.reject(Error(
@@ -28342,7 +28344,7 @@ const RESPONDDIR = (output, URL, location, acceptHeader, encodingHeader) =>
     encodingHeader
   ))
   .catch(error =>
-    RESPONSEEXCUSE(output, error, 'scan', URL)
+    RESPONDEXCUSE(output, error, 'scan', URL)
   );
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -28482,7 +28484,7 @@ const create = (hostnames, mapHostname, mapSignname, port) => (
   ))
 );
 
-const getidentifier = headers =>
+const parse = headers =>
   (
     headers[':method'] !== 'GET' ||
     !headers[':scheme'] ||
@@ -28525,7 +28527,7 @@ const getlocation = (URL, hostnames, mapHostname, mapPathname) =>
   );
 
 const answer = (hostnames, mapHostname, mapPathname, output, headers) =>
-  getidentifier(headers)
+  parse(headers)
   .then(URL =>
     getlocation(
       URL,
@@ -28544,7 +28546,7 @@ const answer = (hostnames, mapHostname, mapPathname, output, headers) =>
     )
   )
   .catch(error =>
-      RESPONSEEXCUSE(output, error, `wrong request`, {})
+    RESPONDEXCUSE(output, error, `parse request`, {})
   );
 
 const INDEX = ({
