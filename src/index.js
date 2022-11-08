@@ -29,18 +29,12 @@ const STREAMWRAP = (stream, name) =>
   .on('error', error =>
     log(`Warning: ${name} stream, ${error.message}.`)
   )
-  .on('unpipe', stream._writableState !== undefined && (source =>
-    !source._readableState.ended && !source._readableState.destroyed &&
-    (source.listenerCount('data') > 0) && source.destroy(Error(
-      `unpiped and destroyed`
-    ))
-  ) || noop)
-  .on('error', stream._readableState !== undefined && (error =>
-    !stream._readableState.ended && !stream._readableState.destroyed &&
-    (stream.listenerCount('data') > 0) && stream.emit('data',
-      `\nError: ${error.message}.\n`
-    )
-  ) || noop)
+  .on('unpipe', source =>
+    source.destroy(Error(`unpiped, destroying`))
+  )
+  .on('aborted', () =>
+    stream.destroy(Error(`aborted and destroyed`))
+  )
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -438,12 +432,7 @@ const answer = (hostnames, mapHostname, mapPathname, output, headers) =>
     )
     .then(location =>
       (location.slice(-1) === path.sep && RESPONDDIR || RESPONDFILE)(
-        STREAMWRAP(output, 'output')
-        .on('aborted', () =>
-          output.destroy(Error(
-            `aborted and destroyed`
-          ))
-        ),
+        STREAMWRAP(output, 'output'),
         URL,
         location,
         headers['accept'] || '',
