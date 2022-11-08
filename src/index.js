@@ -30,10 +30,10 @@ const STREAMWRAP = (stream, name) =>
     log(`Warning: ${name} stream, ${error.message}.`)
   )
   .on('unpipe', source =>
-    source.destroy(Error(`unpiped, destroying`))
+    source.destroy(Error(` destroying`))
   )
   .on('aborted', () =>
-    stream.destroy(Error(`aborted, destroying`))
+    stream.destroy(Error(` destroying`))
   )
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -65,26 +65,12 @@ const RESPONSEEXCUSE = (output, error, action, URL) =>
     'content-type':
       'text/plain;charset=utf-8',
     'location':
-      error.code === 'DIRNOTFILE' && (URL.pathname = URL.pathname.concat('/'), URL.format()) ||
-      error.code === 'FILENOTDIR' &&(URL.pathname = URL.pathname.slice(0, -1), URL.format()) ||
+      error.code === 'DIRNOTFILE' && URL.pathname.concat('/') ||
+      error.code === 'FILENOTDIR' && URL.pathname.slice(0, -1) ||
       undefined
   })
   .then(output => (
     output.end(`${error.name}: ${error.message}, ${action}: ${URL.pathname}.`),
-    undefined
-  ))
-
-const RESPONSEREDIRECT = (output, content, location) =>
-  responseheaders(output, {
-    ':status':
-      301,
-    'content-type':
-      'text/plain;charset=utf-8',
-    'location':
-      location
-  })
-  .then(output =>(
-    output.end(content),
     undefined
   ))
 
