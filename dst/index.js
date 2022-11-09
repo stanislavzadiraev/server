@@ -28486,12 +28486,6 @@ const create = (hostnames, mapHostname, mapSignname, port) => (
   ))
 );
 
-const validGET = headers =>
-  headers[':method'] === 'GET' &&
-  headers[':scheme'] &&
-  headers[':authority'] &&
-  headers[':path'];
-
 const getlocation = (URL, mapHostname, mapPathname) =>
   Promise.all(
     [
@@ -28515,7 +28509,13 @@ const getlocation = (URL, mapHostname, mapPathname) =>
     )
   );
 
-const validURL = (headers, hostnames) =>
+const validMethod = (headers, method) =>
+  headers[':method'] === method &&
+  headers[':scheme'] &&
+  headers[':authority'] &&
+  headers[':path'];
+
+const validHostname = (headers, hostnames) =>
   Promise.resolve(
     url.parse(
       `${headers[':scheme']}://${headers[':authority']}${headers[':path']}`
@@ -28532,9 +28532,9 @@ const validURL = (headers, hostnames) =>
   );
 
 const answer = (hostnames, mapHostname, mapPathname, output, headers) =>
-  validURL(headers, hostnames)
+  validHostname(headers, hostnames)
   .then(URL =>
-    validGET(headers) &&
+    validMethod(headers, 'GET') &&
     getlocation(
       URL,
       mapHostname,
@@ -28549,9 +28549,9 @@ const answer = (hostnames, mapHostname, mapPathname, output, headers) =>
         headers['accept-encoding'] || ''
       )
     )
-    .catch(error =>
-      RESPONDEXCUSE(output, error, `parse GET request`, URL)
-    )
+  )
+  .catch(error =>
+    RESPONDEXCUSE(output, error, `parse headers`, URL)
   );
 
 const INDEX = ({
