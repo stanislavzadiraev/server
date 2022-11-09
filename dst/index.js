@@ -28551,7 +28551,7 @@ const answer = (hostnames, mapHostname, mapPathname, output, headers) =>
     )
   )
   .catch(error =>
-    output.close()
+    output.end()
   );
 
 const INDEX = ({
