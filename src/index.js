@@ -333,7 +333,7 @@ const TOUCHSIGNS = (hostnames, mapSignname) =>
 
 ////////////////////////////////////////////////////////////////////////////////
 
-const TOUCHROOTS = (hostnames, mapHostname) =>
+const TOUCHHOSTS = (hostnames, mapHostname) =>
   Promise.all(
     hostnames
     .map(hostname =>
@@ -361,9 +361,8 @@ const TOUCHROOTS = (hostnames, mapHostname) =>
 ////////////////////////////////////////////////////////////////////////////////
 
 const create = (hostnames, mapHostname, mapSignname, port) => (
-  log('Server starting.'),
   Promise.all([
-    TOUCHROOTS(hostnames, mapHostname),
+    TOUCHHOSTS(hostnames, mapHostname),
     TOUCHSIGNS(hostnames, mapSignname)
   ])
   .then(([paths, [certificate, privateKey, publicKey]]) =>
@@ -373,10 +372,6 @@ const create = (hostnames, mapHostname, mapSignname, port) => (
     })
     .listen(port)
   )
-  .then(server => (
-    log('Server started.'),
-    server
-  ))
 )
 
 const getlocation = (URL, mapHostname, mapPathname) =>
@@ -402,6 +397,25 @@ const getlocation = (URL, mapHostname, mapPathname) =>
     )
   )
 
+const answerGET = (URL, mapHostname, mapPathname, output, headers) =>
+  getlocation(
+    URL,
+    mapHostname,
+    mapPathname
+  )
+  .then(location =>
+    (location.slice(-1) === path.sep && RESPONDDIR || RESPONDFILE)(
+      STREAMWRAP(output, 'output'),
+      URL,
+      location,
+      headers['accept'] || '',
+      headers['accept-encoding'] || ''
+    )
+  )
+  .catch(error =>
+    RESPONDEXCUSE(output, error, 'on GET', URL)
+  )
+
 const validMethod = (headers, method) =>
   headers[':method'] === method &&
   headers[':scheme'] &&
@@ -423,25 +437,6 @@ const validHostname = (headers, hostnames) =>
       'wrong hostname'
     ))
   )
-
-const answerGET = (URL, mapHostname, mapPathname, output, headers) =>
-    getlocation(
-      URL,
-      mapHostname,
-      mapPathname
-    )
-    .then(location =>
-      (location.slice(-1) === path.sep && RESPONDDIR || RESPONDFILE)(
-        STREAMWRAP(output, 'output'),
-        URL,
-        location,
-        headers['accept'] || '',
-        headers['accept-encoding'] || ''
-      )
-    )
-    .catch(error =>
-      RESPONDEXCUSE(output, error, 'on GET', URL)
-    )
 
 const INDEX = ({
     hostnames = ['localhost'],
@@ -469,10 +464,10 @@ const INDEX = ({
           output,
           headers
         ) ||
-        output.close()
+        output.destroy()
       )
       .catch(error =>
-        output.close()
+        output.destroy()
       )
     )
   )
