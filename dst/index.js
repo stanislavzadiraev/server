@@ -28506,6 +28506,7 @@ const testhead = headers =>
       {code: 'WRREQ'}
   ));
 
+
 const getlocation = (URL, hostnames, mapHostname, mapPathname) =>
   Promise.all(
     [
@@ -28525,17 +28526,14 @@ const getlocation = (URL, hostnames, mapHostname, mapPathname) =>
   .then(([hostname, pathname]) =>
     hostnames.includes(hostname) &&
     Promise.resolve(
-      [hostname, pathname]
+      path.join(
+        mapHostname(hostname, pathname),
+        mapPathname(pathname, hostname)
+      )
     ) ||
     Promise.reject(Error(
       'wrong hostname'
     ))
-  )
-  .then(([hostname, pathname]) =>
-    path.join(
-      mapHostname(hostname, pathname),
-      mapPathname(pathname, hostname)
-    )
   );
 
 const answer = (output, headers, hostnames, mapHostname, mapPathname) =>
