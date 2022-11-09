@@ -424,10 +424,7 @@ const validHostname = (headers, hostnames) =>
     ))
   )
 
-const answer = (hostnames, mapHostname, mapPathname, output, headers) =>
-  validHostname(headers, hostnames)
-  .then(URL =>
-    validMethod(headers, 'GET') &&
+const answerGET = (URL, mapHostname, mapPathname, output, headers) =>
     getlocation(
       URL,
       mapHostname,
@@ -442,10 +439,9 @@ const answer = (hostnames, mapHostname, mapPathname, output, headers) =>
         headers['accept-encoding'] || ''
       )
     )
-  )
-  .catch(error =>
-    output.end()
-  )
+    .catch(error =>
+      RESPONDEXCUSE(output, error, 'on GET', URL)
+    )
 
 const INDEX = ({
     hostnames = ['localhost'],
@@ -463,17 +459,22 @@ const INDEX = ({
   .then(server =>
     server
     .on('stream', (output, headers) =>
-      answer(
-        hostnames,
-        mapHostname,
-        mapPathname,
-        output,
-        headers
+      validHostname(headers, hostnames)
+      .then(URL =>
+        validMethod(headers, 'GET') &&
+        answerGET(
+          URL,
+          mapHostname,
+          mapPathname,
+          output,
+          headers
+        ) ||
+        output.close()
+      )
+      .catch(error =>
+        output.close()
       )
     )
   )
-
-INDEX.create = create
-INDEX.answer = answer
 
 export default INDEX
