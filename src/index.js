@@ -48,17 +48,12 @@ const TESTSTAT = location =>
 ////////////////////////////////////////////////////////////////////////////////
 
 const responseheaders = (output, headers) =>
-  output.aborted && Promise.reject(Error(
-    `output stream aborted`
-  )) ||
-  (output._writableState.finished || output._writableState.destroyed) && Promise.reject(Error(
+  (
+    output.aborted ||
+    output._writableState.finished ||
+    output._writableState.destroyed
+  ) && Promise.reject(Error(
     'wrong output state'
-  )) ||
-  (!headers[':status'] || !headers['content-type']) && Promise.reject(Error(
-    'wrong respond headers'
-  )) ||
-  output.headersSent && Promise.reject(Error(
-    'headers already sent'
   )) ||
   Promise.resolve((
     output.respond(headers),
@@ -81,8 +76,7 @@ const RESPONDEXCUSE = (output, error, action, URL) =>
       undefined
   })
   .then(output => (
-    output.end(`${error.name}: ${error.message}, ${action}: ${URL.hostname}${URL.pathname}.`),
-    undefined
+    output.end(`${error.name}: ${error.message}, ${action}: ${URL.hostname}${URL.pathname}.`)
   ))
 
 const RESPONDSTREAM = (output, type, encoding, source) =>
@@ -95,8 +89,7 @@ const RESPONDSTREAM = (output, type, encoding, source) =>
       encoding
   })
   .then(output => (
-    source.pipe(output),
-    undefined
+    source.pipe(output)
   ))
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -360,20 +353,6 @@ const TOUCHHOSTS = (hostnames, mapHostname) =>
 
 ////////////////////////////////////////////////////////////////////////////////
 
-const create = (hostnames, mapHostname, mapSignname, port) => (
-  Promise.all([
-    TOUCHHOSTS(hostnames, mapHostname),
-    TOUCHSIGNS(hostnames, mapSignname)
-  ])
-  .then(([paths, [certificate, privateKey, publicKey]]) =>
-    http2.createSecureServer({
-      key: privateKey,
-      cert: certificate
-    })
-    .listen(port)
-  )
-)
-
 const getlocation = (URL, mapHostname, mapPathname) =>
   Promise.all(
     [
@@ -438,6 +417,20 @@ const validHostname = (headers, hostnames) =>
     ))
   )
 
+  const create = (hostnames, mapHostname, mapSignname, port) => (
+    Promise.all([
+      TOUCHHOSTS(hostnames, mapHostname),
+      TOUCHSIGNS(hostnames, mapSignname)
+    ])
+    .then(([paths, [certificate, privateKey, publicKey]]) =>
+      http2.createSecureServer({
+        key: privateKey,
+        cert: certificate
+      })
+      .listen(port)
+    )
+  )
+
 const INDEX = ({
     hostnames = ['localhost'],
     mapHostname = noop,
@@ -456,6 +449,7 @@ const INDEX = ({
     .on('stream', (output, headers) =>
       validHostname(headers, hostnames)
       .then(URL =>
+
         validMethod(headers, 'GET') &&
         answerGET(
           URL,
@@ -464,6 +458,7 @@ const INDEX = ({
           output,
           headers
         ) ||
+
         output.destroy()
       )
       .catch(error =>
