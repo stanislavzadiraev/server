@@ -444,7 +444,7 @@ const answer = (hostnames, mapHostname, mapPathname, output, headers) =>
     )
   )
   .catch(error =>
-    RESPONDEXCUSE(output, error, `parse headers`, URL)
+    output.close()
   )
 
 const INDEX = ({
