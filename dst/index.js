@@ -28536,7 +28536,7 @@ const getlocation = (URL, hostnames, mapHostname, mapPathname) =>
     ))
   );
 
-const answer = (output, headers, hostnames, mapHostname, mapPathname) =>
+const answer = (hostnames, mapHostname, mapPathname, output, headers) =>
   testhead(headers)
   .then(headers =>
     getlocation(
@@ -28576,11 +28576,11 @@ const INDEX = ({
     server
     .on('stream', (output, headers) =>
       answer(
-        output,
-        headers,
         hostnames,
         mapHostname,
-        mapPathname
+        mapPathname,
+        output,
+        headers
       )
     )
   );
