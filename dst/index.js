@@ -28491,7 +28491,7 @@ const geturl = headers =>
     `${headers[':scheme']}://${headers[':authority']}${headers[':path']}`
   );
 
-const testhead = headers =>
+const parse = headers =>
   (
     headers[':method'] === 'GET' ||
     headers[':scheme'] ||
@@ -28499,7 +28499,7 @@ const testhead = headers =>
     headers[':path']
   ) &&
   Promise.resolve(
-    headers
+    geturl(headers)
   ) ||
   Promise.reject(Object.assign(
       Error('wrong request'),
@@ -28511,12 +28511,12 @@ const getlocation = (URL, hostnames, mapHostname, mapPathname) =>
   Promise.all(
     [
       ['hostname', url.domainToUnicode(URL.hostname)],
-      ['pathname', path.normalize(URL.pathname)],
+      ['pathname', path.normalize(URL.pathname)]
     ]
-    .map(([key, val]) =>
-      val &&
+    .map(([key, value]) =>
+      value &&
       Promise.resolve(
-        val
+        value
       ) ||
       Promise.reject(Error(
         `empty ${key}`
@@ -28537,10 +28537,10 @@ const getlocation = (URL, hostnames, mapHostname, mapPathname) =>
   );
 
 const answer = (hostnames, mapHostname, mapPathname, output, headers) =>
-  testhead(headers)
-  .then(headers =>
+  parse(headers)
+  .then(URL =>
     getlocation(
-      geturl(headers),
+      URL,
       hostnames,
       mapHostname,
       mapPathname
