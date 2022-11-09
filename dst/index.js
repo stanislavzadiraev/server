@@ -28551,9 +28551,9 @@ const answer = (hostnames, mapHostname, mapPathname, output, headers) =>
         headers['accept-encoding'] || ''
       )
     )
-  )
-  .catch(error =>
-    RESPONDEXCUSE(output, error, `parse GET request`, URL)
+    .catch(error =>
+      RESPONDEXCUSE(output, error, `parse GET request`, URL)
+    )
   );
 
 const INDEX = ({
