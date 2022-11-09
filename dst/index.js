@@ -28475,17 +28475,11 @@ const create = (hostnames, mapHostname, mapSignname, port) => (
   ])
   .then(([paths, [certificate, privateKey, publicKey]]) =>
     http2.createSecureServer({
-      cert: certificate,
       key: privateKey,
+      cert: certificate
     })
+    .listen(port)
   )
-  .then(server =>(
-    hostnames
-    .map(hostname =>
-      server.listen(port, hostname)
-    ),
-    server
-  ))
   .then(server => (
     log('Server started.'),
     server
@@ -28561,7 +28555,6 @@ const answer = (hostnames, mapHostname, mapPathname, output, headers) =>
       RESPONDEXCUSE(output, error, `parse GET request`, URL)
     )
   );
-
 
 const INDEX = ({
     hostnames = ['localhost'],
