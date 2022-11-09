@@ -28405,7 +28405,7 @@ const TOUCHSIGNS = (hostnames, mapSignname) =>
   Promise.resolve(
     ['certificate', 'private', 'public']
     .map(name =>
-      `${mapSignname(hostnames.join('-') || 'default')}.${name}.pem`
+      `${mapSignname(hostnames.join('-'))}.${name}.pem`
     )
   )
   .then(filenames =>
@@ -28486,26 +28486,22 @@ const create = (hostnames, mapHostname, mapSignname, port) => (
   ))
 );
 
-const geturl = headers =>
-  url.parse(
-    `${headers[':scheme']}://${headers[':authority']}${headers[':path']}`
-  );
+const validGET = headers =>
+  headers[':method'] === 'GET' &&
+  headers[':scheme'] &&
+  headers[':authority'] &&
+  headers[':path'];
 
-const parse = headers =>
-  (
-    headers[':method'] === 'GET' ||
-    headers[':scheme'] ||
-    headers[':authority'] ||
-    headers[':path']
-  ) &&
+const parseGET = headers =>
   Promise.resolve(
-    geturl(headers)
+    url.parse(
+      `${headers[':scheme']}://${headers[':authority']}${headers[':path']}`
+    )
   ) ||
   Promise.reject(Object.assign(
       Error('wrong request'),
       {code: 'WRREQ'}
   ));
-
 
 const getlocation = (URL, hostnames, mapHostname, mapPathname) =>
   Promise.all(
@@ -28537,7 +28533,8 @@ const getlocation = (URL, hostnames, mapHostname, mapPathname) =>
   );
 
 const answer = (hostnames, mapHostname, mapPathname, output, headers) =>
-  parse(headers)
+  validGET(headers) &&
+  parseGET(headers)
   .then(URL =>
     getlocation(
       URL,
@@ -28554,10 +28551,11 @@ const answer = (hostnames, mapHostname, mapPathname, output, headers) =>
         headers['accept-encoding'] || ''
       )
     )
-  )
-  .catch(error =>
-    RESPONDEXCUSE(output, error, `parse request`, geturl(headers))
+    .catch(error =>
+      RESPONDEXCUSE(output, error, `parse GET request`, URL)
+    )
   );
+
 
 const INDEX = ({
     hostnames = ['localhost'],
