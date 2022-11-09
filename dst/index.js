@@ -28515,7 +28515,7 @@ const getlocation = (URL, mapHostname, mapPathname) =>
     )
   );
 
-const validURL = headers =>
+const validURL = (headers, hostnames) =>
   Promise.resolve(
     url.parse(
       `${headers[':scheme']}://${headers[':authority']}${headers[':path']}`
@@ -28532,7 +28532,7 @@ const validURL = headers =>
   );
 
 const answer = (hostnames, mapHostname, mapPathname, output, headers) =>
-  validURL(headers)
+  validURL(headers, hostnames)
   .then(URL =>
     validGET(headers) &&
     getlocation(
