@@ -28492,18 +28492,7 @@ const validGET = headers =>
   headers[':authority'] &&
   headers[':path'];
 
-const parseGET = headers =>
-  Promise.resolve(
-    url.parse(
-      `${headers[':scheme']}://${headers[':authority']}${headers[':path']}`
-    )
-  ) ||
-  Promise.reject(Object.assign(
-      Error('wrong request'),
-      {code: 'WRREQ'}
-  ));
-
-const getlocation = (URL, hostnames, mapHostname, mapPathname) =>
+const getlocation = (URL, mapHostname, mapPathname) =>
   Promise.all(
     [
       ['hostname', url.domainToUnicode(URL.hostname)],
@@ -28520,12 +28509,22 @@ const getlocation = (URL, hostnames, mapHostname, mapPathname) =>
     )
   )
   .then(([hostname, pathname]) =>
-    hostnames.includes(hostname) &&
+    path.join(
+      mapHostname(hostname, pathname),
+      mapPathname(pathname, hostname)
+    )
+  );
+
+const validURL = headers =>
+  Promise.resolve(
+    url.parse(
+      `${headers[':scheme']}://${headers[':authority']}${headers[':path']}`
+    )
+  )
+  .then(URL =>
+    hostnames.includes(url.domainToUnicode(URL.hostname)) &&
     Promise.resolve(
-      path.join(
-        mapHostname(hostname, pathname),
-        mapPathname(pathname, hostname)
-      )
+      URL
     ) ||
     Promise.reject(Error(
       'wrong hostname'
@@ -28533,12 +28532,11 @@ const getlocation = (URL, hostnames, mapHostname, mapPathname) =>
   );
 
 const answer = (hostnames, mapHostname, mapPathname, output, headers) =>
-  validGET(headers) &&
-  parseGET(headers)
+  validURL(headers)
   .then(URL =>
+    validGET(headers) &&
     getlocation(
       URL,
-      hostnames,
       mapHostname,
       mapPathname
     )
