@@ -28533,12 +28533,8 @@ const create = (hostnames, mapHostname, mapSignname, port) => (
       key: privateKey,
       cert: certificate
     })
-    .listen(port)
+    .listen({port})
   )
-  .then(server => (
-    log(server.address()),
-    server
-  ))
 );
 
 const INDEX = ({
