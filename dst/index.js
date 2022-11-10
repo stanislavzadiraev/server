@@ -28154,7 +28154,7 @@ const TESTSTAT = location =>
 
 ////////////////////////////////////////////////////////////////////////////////
 
-const responseheaders = (output, headers) =>
+const respondheaders = (output, headers) =>
   (output.aborted || output.destroyed || output.closed) && Promise.reject(Error(
     'wrong output state'
   )) ||
@@ -28164,7 +28164,7 @@ const responseheaders = (output, headers) =>
   ));
 
 const RESPONDEXCUSE = (output, error, action, URL) =>
-  responseheaders(output, {
+  respondheaders(output, {
     ':status':
       error.code === 'WRREQ' && 400||
       error.code === 'ENOENT' && 404 ||
@@ -28183,7 +28183,7 @@ const RESPONDEXCUSE = (output, error, action, URL) =>
   ));
 
 const RESPONDSTREAM = (output, type, encoding, source) =>
-  responseheaders(output, {
+  respondheaders(output, {
     ':status':
       200,
     'content-type':
@@ -28222,7 +28222,7 @@ const testfile = location =>
     ))
   );
 
-const sourcestream = (location, encodingHeader) =>
+const sourcestream = (location, encodings) =>
   testfile(location)
   .then(location =>
     fs.promises.open(location)
@@ -28232,9 +28232,9 @@ const sourcestream = (location, encodingHeader) =>
   )
   .then(source => [
     `${mime.getType(location) || '*/*'}; charset=utf-8`,
-    encodingHeader.includes('br') && 'br' ||
-    encodingHeader.includes('gzip') && 'gzip' ||
-    encodingHeader.includes('deflate') && 'deflate' ||
+    encodings.includes('br') && 'br' ||
+    encodings.includes('gzip') && 'gzip' ||
+    encodings.includes('deflate') && 'deflate' ||
     'undefined',
     source
   ])
@@ -28245,8 +28245,8 @@ const sourcestream = (location, encodingHeader) =>
     .pipe(encoder[encoding]())
   ]);
 
-const RESPONDFILE = (output, URL, location, acceptHeader, encodingHeader) =>
-  sourcestream(location, encodingHeader)
+const RESPONDFILE = (output, URL, location, accepts, encodings, languages) =>
+  sourcestream(location, encodings)
   .then(([mimetype, encoding, source]) =>
     RESPONDSTREAM(output, mimetype, encoding, source)
   )
@@ -28255,8 +28255,8 @@ const RESPONDFILE = (output, URL, location, acceptHeader, encodingHeader) =>
   );
 ////////////////////////////////////////////////////////////////////////////////
 
-const indexnames = acceptHeader =>
-  acceptHeader.split(',')
+const indexnames = accepts =>
+  accepts.split(',')
   .map(acceptItem =>
     acceptItem
     .match(/^\s*((?:[a-z]+|\*)\/(?:(?:[a-z0-9]+)(?:[+\-.][a-z0-9]+)*|\*))(?:;q=([01](?:\.\d+)?))?\s*$/s)
@@ -28297,12 +28297,12 @@ const testdir = location =>
     ))
   );
 
-const sourcefile = (acceptHeader, location) =>
+const sourcefile = (accepts, location) =>
   testdir(location)
   .then(location =>
     Promise.all([
       fs.promises.readdir(location, 'utf8'),
-      indexnames(acceptHeader)
+      indexnames(accepts)
     ])
   )
   .then(([availables, acceptables]) =>
@@ -28323,14 +28323,14 @@ const sourcefile = (acceptHeader, location) =>
     ))
   );
 
-const RESPONDDIR = (output, URL, location, acceptHeader, encodingHeader) =>
-  sourcefile(acceptHeader, location)
+const RESPONDDIR = (output, URL, location, accepts, encodings, languages) =>
+  sourcefile(accepts, location)
   .then(filename => RESPONDFILE(
     output,
     (URL.pathname += filename, URL),
     path.join(location, filename),
-    acceptHeader,
-    encodingHeader
+    accepts,
+    encodings
   ))
   .catch(error =>
     RESPONDEXCUSE(output, error, 'scan', URL)
@@ -28479,7 +28479,7 @@ const getlocation = (URL, mapHostname, mapPathname) =>
     )
   );
 
-const RESPONDGET = (URL, mapHostname, mapPathname, output, headers) =>
+const RESPONDGET = (URL, mapHostname, mapPathname, accepts, encodings, languages, output) =>
   getlocation(
     URL,
     mapHostname,
@@ -28490,8 +28490,9 @@ const RESPONDGET = (URL, mapHostname, mapPathname, output, headers) =>
       STREAMWRAP(output, 'output'),
       URL,
       location,
-      headers['accept'] || '',
-      headers['accept-encoding'] || ''
+      accepts,
+      encodings,
+      languages
     )
   )
   .catch(error =>
@@ -28560,8 +28561,10 @@ const INDEX = ({
           URL,
           mapHostname,
           mapPathname,
-          output,
-          headers
+          headers['accept'] || '',
+          headers['accept-encoding'] || '',
+          headers['accept-language'] || '',
+          output
         ) ||
 
         output.destroy()
