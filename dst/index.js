@@ -28155,11 +28155,7 @@ const TESTSTAT = location =>
 ////////////////////////////////////////////////////////////////////////////////
 
 const responseheaders = (output, headers) =>
-  (
-    output.aborted ||
-    output._writableState.finished ||
-    output._writableState.destroyed
-  ) && Promise.reject(Error(
+  (output.aborted || output.destroyed || output.closed) && Promise.reject(Error(
     'wrong output state'
   )) ||
   Promise.resolve((
@@ -28483,7 +28479,7 @@ const getlocation = (URL, mapHostname, mapPathname) =>
     )
   );
 
-const answerGET = (URL, mapHostname, mapPathname, output, headers) =>
+const RESPONDGET = (URL, mapHostname, mapPathname, output, headers) =>
   getlocation(
     URL,
     mapHostname,
@@ -28501,6 +28497,8 @@ const answerGET = (URL, mapHostname, mapPathname, output, headers) =>
   .catch(error =>
     RESPONDEXCUSE(output, error, 'on GET', URL)
   );
+
+////////////////////////////////////////////////////////////////////////////////
 
 const validMethod = (headers, method) =>
   headers[':method'] === method &&
@@ -28524,19 +28522,19 @@ const validHostname = (headers, hostnames) =>
     ))
   );
 
-  const create = (hostnames, mapHostname, mapSignname, port) => (
-    Promise.all([
-      TOUCHHOSTS(hostnames, mapHostname),
-      TOUCHSIGNS(hostnames, mapSignname)
-    ])
-    .then(([paths, [certificate, privateKey, publicKey]]) =>
-      http2.createSecureServer({
-        key: privateKey,
-        cert: certificate
-      })
-      .listen(port)
-    )
-  );
+const create = (hostnames, mapHostname, mapSignname, port) => (
+  Promise.all([
+    TOUCHHOSTS(hostnames, mapHostname),
+    TOUCHSIGNS(hostnames, mapSignname)
+  ])
+  .then(([paths, [certificate, privateKey, publicKey]]) =>
+    http2.createSecureServer({
+      key: privateKey,
+      cert: certificate
+    })
+    .listen(port)
+  )
+);
 
 const INDEX = ({
     hostnames = ['localhost'],
@@ -28558,7 +28556,7 @@ const INDEX = ({
       .then(URL =>
 
         validMethod(headers, 'GET') &&
-        answerGET(
+        RESPONDGET(
           URL,
           mapHostname,
           mapPathname,
