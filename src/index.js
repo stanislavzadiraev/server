@@ -326,7 +326,7 @@ const TOUCHROOTS = (hostnames, mapHostname) =>
   Promise.all(
     hostnames
     .map(hostname =>
-      mapHostname(hostname, '')
+      mapHostname(hostname)
     )
     .map((pathname) =>
       fs.promises.readdir(pathname)
@@ -421,34 +421,36 @@ const INDEX = ({
     mapHostname = noop,
     mapSignname = noop,
     mapPathname = noop,
-    port = 443
+    listens,
   }) =>
   Promise.all([
     TOUCHROOTS(hostnames, mapHostname),
     TOUCHSIGNS(hostnames, mapSignname)
   ])
-  .then(([, [cert, key, ]]) =>
-    http2.createSecureServer({cert, key})
-    .listen({port})
-    .on('stream', (output, headers) =>
-      validHostname(headers, hostnames)
-      .then(URL =>
+  .then(([ , [cert, key, ]]) =>
+    listens.map(listen =>
+      http2.createSecureServer({cert, key})
+      .listen(listen)
+      .on('stream', (output, headers) =>
+        validHostname(headers, hostnames)
+        .then(URL =>
 
-        validMethod(headers, 'GET') &&
-        RESPONDGET(
-          URL,
-          mapHostname,
-          mapPathname,
-          headers['accept'] || '',
-          headers['accept-encoding'] || '',
-          headers['accept-language'] || '',
-          output
-        ) ||
+          validMethod(headers, 'GET') &&
+          RESPONDGET(
+            URL,
+            mapHostname,
+            mapPathname,
+            headers['accept'] || '',
+            headers['accept-encoding'] || '',
+            headers['accept-language'] || '',
+            output
+          ) ||
 
-        output.destroy()
-      )
-      .catch(error =>
-        output.destroy()
+          output.destroy()
+        )
+        .catch(error =>
+          output.destroy()
+        )
       )
     )
   )
