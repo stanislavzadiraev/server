@@ -307,20 +307,18 @@ const TOUCHSIGNS = (hostnames, mapSignname) =>
           .map((filename, index) =>
             fs.promises.readdir(path.dirname(filename))
             .catch(error =>
-              Promise.resolve(
                 fs.promises.mkdir(path.dirname(filename))
-              )
             )
             .then(() =>
               fs.promises.writeFile(filename, pems[index])
             )
           )
         )
-        .catch(error =>
-          log(
-            'Warning: certificate or one or more of keys not saved, ignored.'
-          )
-        )
+//        .catch(error =>
+//          log(
+//            'Warning: certificate or one or more of keys not saved, ignored.'
+//          )
+//        )
         .then(() =>
           pems
         )
