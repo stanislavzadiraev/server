@@ -322,7 +322,7 @@ const TOUCHSIGNS = (hostnames, mapSignname) =>
 
 ////////////////////////////////////////////////////////////////////////////////
 
-const TOUCHHOSTS = (hostnames, mapHostname) =>
+const TOUCHROOTS = (hostnames, mapHostname) =>
   Promise.all(
     hostnames
     .map(hostname =>
@@ -416,19 +416,12 @@ const validHostname = (headers, hostnames) =>
     ))
   )
 
-const create = (hostnames, mapHostname, mapSignname, port) => (
-  Promise.all([
-    TOUCHHOSTS(hostnames, mapHostname),
-    TOUCHSIGNS(hostnames, mapSignname)
-  ])
-  .then(([paths, [certificate, privateKey, publicKey]]) =>
-    http2.createSecureServer({
-      key: privateKey,
-      cert: certificate
-    })
-    .listen({port})
-  )
-)
+const create = (certificate, privateKey, publicKey, port) =>
+  http2.createSecureServer({
+    key: privateKey,
+    cert: certificate
+  })
+  .listen({port})
 
 const INDEX = ({
     hostnames = ['localhost'],
@@ -437,11 +430,17 @@ const INDEX = ({
     mapPathname = noop,
     port = 443
   }) =>
-  create(
-    hostnames,
-    mapHostname,
-    mapSignname,
-    port
+  Promise.all([
+    TOUCHROOTS(hostnames, mapHostname),
+    TOUCHSIGNS(hostnames, mapSignname)
+  ])
+  .then(([paths, [certificate, privateKey, publicKey]]) =>
+    create(
+      certificate,
+      privateKey,
+      publicKey,
+      port
+    )
   )
   .then(server =>
     server
