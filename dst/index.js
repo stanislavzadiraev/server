@@ -28390,6 +28390,28 @@ const SELFSIGNED = hostnames =>
 
 ////////////////////////////////////////////////////////////////////////////////
 
+const touchpaths = pathnames =>
+  Promise.all([
+    pathnames
+    .map(pathname =>
+      fs.promises.readdir(pathname)
+      .catch(error => (
+        log(
+          `Warning: path '${pathname}' not found, empty creating.`
+        ),
+        fs.promises.mkdir(pathname)
+        .catch(error =>
+          log(
+            `Warning: path '${pathname}' not created, ignored.`
+          )
+        )
+      ))
+      .then(() =>
+        pathname
+      )
+    )
+  ]);
+
 const TOUCHSIGNS = (hostnames, mapSignname) =>
   Promise.resolve(
     ['certificate', 'private', 'public']
@@ -28409,23 +28431,19 @@ const TOUCHSIGNS = (hostnames, mapSignname) =>
       ),
       SELFSIGNED(hostnames)
       .then(pems =>
-        Promise.all(
+        touchpaths(filenames.map(filename => path.dirname(filename)))
+
+        .then(Promise.all(
           filenames
           .map((filename, index) =>
-            fs.promises.readdir(path.dirname(filename))
-            .catch(error =>
-                fs.promises.mkdir(path.dirname(filename))
-            )
-            .then(() =>
-              fs.promises.writeFile(filename, pems[index])
-            )
+            fs.promises.writeFile(filename, pems[index])
+          )
+        ))
+        .catch(error =>
+          log(
+            'Warning: certificate or one or more of keys not saved, ignored.'
           )
         )
-//        .catch(error =>
-//          log(
-//            'Warning: certificate or one or more of keys not saved, ignored.'
-//          )
-//        )
         .then(() =>
           pems
         )
@@ -28436,29 +28454,8 @@ const TOUCHSIGNS = (hostnames, mapSignname) =>
 ////////////////////////////////////////////////////////////////////////////////
 
 const TOUCHROOTS = (hostnames, mapHostname) =>
-  Promise.all(
-    hostnames
-    .map(hostname =>
-      mapHostname(hostname)
-    )
-    .map((pathname) =>
-      fs.promises.readdir(pathname)
-      .catch(error => (
-        log(
-          `Warning: source path '${pathname}' not found, empty creating.`
-        ),
-        fs.promises.mkdir(pathname)
-        .catch(error =>
-          log(
-            `Warning: source path '${pathname}' not created, ignored.`
-          )
-        )
-      ))
-      .then(() =>
-        pathname
-      )
-    )
-  );
+      touchpaths(hostnames.map(hostname => mapHostname(hostname)));
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
