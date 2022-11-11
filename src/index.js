@@ -416,13 +416,6 @@ const validHostname = (headers, hostnames) =>
     ))
   )
 
-const create = (certificate, privateKey, publicKey, port) =>
-  http2.createSecureServer({
-    key: privateKey,
-    cert: certificate
-  })
-  .listen({port})
-
 const INDEX = ({
     hostnames = ['localhost'],
     mapHostname = noop,
@@ -434,16 +427,9 @@ const INDEX = ({
     TOUCHROOTS(hostnames, mapHostname),
     TOUCHSIGNS(hostnames, mapSignname)
   ])
-  .then(([paths, [certificate, privateKey, publicKey]]) =>
-    create(
-      certificate,
-      privateKey,
-      publicKey,
-      port
-    )
-  )
-  .then(server =>
-    server
+  .then(([, [cert, key, ]]) =>
+    http2.createSecureServer({cert, key})
+    .listen({port})
     .on('stream', (output, headers) =>
       validHostname(headers, hostnames)
       .then(URL =>
