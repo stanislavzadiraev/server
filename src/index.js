@@ -309,13 +309,8 @@ const TOUCHSIGNS = (hostnames, mapSignname) =>
             .catch(error =>
               fs.promises.mkdir(path.dirname(filename))
             )
-          )
-        )
-        .then(() =>
-          Promise.all(
-            filenames
-            .map((filename, index) =>
-                fs.promises.writeFile(filename, pems[index])
+            .then(() =>
+              fs.promises.writeFile(filename, pems[index])
             )
           )
         )
