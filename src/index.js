@@ -305,7 +305,13 @@ const TOUCHSIGNS = (hostnames, mapSignname) =>
         Promise.all(
           filenames
           .map((filename, index) =>
-            fs.promises.writeFile(filename, pems[index])
+            fs.promises.readdir(path.dirname(filename))
+            .catch(error =>
+              fs.promises.mkdir(path.dirname(filename))
+            )
+            .then(() =>
+              fs.promises.writeFile(filename, pems[index])
+            )
           )
         )
         .catch(error =>
@@ -430,7 +436,6 @@ const INDEX = ({
   .then(([ , [cert, key, ]]) =>
     listens.map(listen =>
       http2.createSecureServer({cert, key})
-      .listen(listen)
       .on('stream', (output, headers) =>
         validHostname(headers, hostnames)
         .then(URL =>
@@ -452,6 +457,7 @@ const INDEX = ({
           output.destroy()
         )
       )
+      .listen(listen)
     )
   )
 
