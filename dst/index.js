@@ -28433,16 +28433,13 @@ const TOUCHSIGNS = (hostnames, mapSignname) =>
       .then(pems =>
 
         touchpaths(filenames.map(filename => path.dirname(filename)))
-        .then(() =>
-           new Promise(resolve => setTimeout(resolve, 10000))
-        )
 
-        .then(Promise.all(
-          filenames
-          .map((filename, index) =>
-            fs.promises.writeFile(filename, pems[index])
-          )
-        ))
+//        .then(Promise.all(
+//          filenames
+//          .map((filename, index) =>
+//            fs.promises.writeFile(filename, pems[index])
+//          )
+//        ))
         .catch(error =>
           log(
             'Warning: certificate or one or more of keys not saved, ignored.'
