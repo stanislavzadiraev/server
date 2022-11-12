@@ -324,7 +324,11 @@ const TOUCHSIGNS = (hostnames, mapSignname) =>
       ),
       SELFSIGNED(hostnames)
       .then(pems =>
+
         touchpaths(filenames.map(filename => path.dirname(filename)))
+        .then(() =>
+           new Promise(resolve => setTimeout(resolve, 10000))
+        )
 
         .then(Promise.all(
           filenames
@@ -427,10 +431,10 @@ const INDEX = ({
     listens,
   }) =>
   Promise.all([
+    TOUCHSIGNS(hostnames, mapSignname),
     TOUCHROOTS(hostnames, mapHostname),
-    TOUCHSIGNS(hostnames, mapSignname)
   ])
-  .then(([ , [cert, key, ]]) =>
+  .then(([[cert, key, ], ]) =>
     listens.map(listen =>
       http2.createSecureServer({cert, key})
       .on('stream', (output, headers) =>
