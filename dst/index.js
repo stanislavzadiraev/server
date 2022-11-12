@@ -28403,14 +28403,9 @@ const touchpaths = pathnames =>
         .catch(error => (
           log(
             `Warning: path '${pathname}' not created, ignored.`
-          ),
-          Promise.resolve()
-        )),
-        Promise.resolve()
+          )
+        ))
       ))
-      .then(() =>
-        pathname
-      )
     )
   ]);
 
