@@ -28391,7 +28391,7 @@ const SELFSIGNED = hostnames =>
 ////////////////////////////////////////////////////////////////////////////////
 
 const touchpaths = pathnames =>
-  Promise.all([
+  Promise.all(
     pathnames
     .map(pathname =>
       fs.promises.readdir(pathname)
@@ -28407,7 +28407,7 @@ const touchpaths = pathnames =>
         ))
       ))
     )
-  ]);
+  );
 
 const TOUCHSIGNS = (hostnames, mapSignname) =>
   Promise.resolve(
@@ -28429,9 +28429,7 @@ const TOUCHSIGNS = (hostnames, mapSignname) =>
       ),
       SELFSIGNED(hostnames)
       .then(pems =>
-
         touchpaths(filenames.map(filename => path.dirname(filename)))
-
         .then(() => Promise.all(
           filenames
           .map((filename, index) =>
@@ -28443,7 +28441,6 @@ const TOUCHSIGNS = (hostnames, mapSignname) =>
             'Warning: certificate or one or more of keys not saved, ignored.'
           )
         )
-
         .then(() =>
           pems
         )
@@ -28454,8 +28451,7 @@ const TOUCHSIGNS = (hostnames, mapSignname) =>
 ////////////////////////////////////////////////////////////////////////////////
 
 const TOUCHROOTS = (hostnames, mapHostname) =>
-      touchpaths(hostnames.map(hostname => mapHostname(hostname)));
-
+  touchpaths(hostnames.map(hostname => mapHostname(hostname)));
 
 ////////////////////////////////////////////////////////////////////////////////
 
