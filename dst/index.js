@@ -28400,11 +28400,13 @@ const touchpaths = pathnames =>
           `Warning: path '${pathname}' not found, empty creating.`
         ),
         fs.promises.mkdir(pathname)
-        .catch(error =>
+        .catch(error => (
           log(
             `Warning: path '${pathname}' not created, ignored.`
-          )
-        )
+          ),
+          Promise.resolve()
+        )),
+        Promise.resolve()
       ))
       .then(() =>
         pathname
