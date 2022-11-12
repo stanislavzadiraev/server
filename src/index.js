@@ -438,6 +438,7 @@ const INDEX = ({
     TOUCHSIGNS(hostnames, mapSignname),
     TOUCHROOTS(hostnames, mapHostname),
   ])
+  .then(log)
   .then(([[cert, key, ], ]) =>
     listens.map(listen =>
       http2.createSecureServer({cert, key})

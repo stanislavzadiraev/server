@@ -28256,7 +28256,8 @@ const RESPONDFILE = (output, URL, location, accepts, encodings, languages) =>
 ////////////////////////////////////////////////////////////////////////////////
 
 const indexnames = accepts =>
-  accepts.split(',')
+  accepts
+  .split(',')
   .map(acceptItem =>
     acceptItem
     .match(/^\s*((?:[a-z]+|\*)\/(?:(?:[a-z0-9]+)(?:[+\-.][a-z0-9]+)*|\*))(?:;q=([01](?:\.\d+)?))?\s*$/s)
@@ -28373,7 +28374,8 @@ const SELFSIGNED = hostnames =>
       dataEncipherment: true
     }, {
       name: 'subjectAltName',
-      altNames: hostnames.map(name => ({
+      altNames: hostnames
+      .map(name => ({
         type: /^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/.test(name) && 7 ||
           /^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$/.test(name) && 6 ||
           null,
@@ -28429,7 +28431,12 @@ const TOUCHSIGNS = (hostnames, mapSignname) =>
       ),
       SELFSIGNED(hostnames)
       .then(pems =>
-        touchpaths(filenames.map(filename => path.dirname(filename)))
+        touchpaths(
+          filenames
+          .map(filename =>
+            path.dirname(filename)
+          )
+        )
         .then(() => Promise.all(
           filenames
           .map((filename, index) =>
@@ -28451,7 +28458,12 @@ const TOUCHSIGNS = (hostnames, mapSignname) =>
 ////////////////////////////////////////////////////////////////////////////////
 
 const TOUCHROOTS = (hostnames, mapHostname) =>
-  touchpaths(hostnames.map(hostname => mapHostname(hostname)));
+  touchpaths(
+    hostnames
+    .map(hostname =>
+      mapHostname(hostname)
+    )
+  );
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -28533,6 +28545,7 @@ const INDEX = ({
     TOUCHSIGNS(hostnames, mapSignname),
     TOUCHROOTS(hostnames, mapHostname),
   ])
+  .then(log)
   .then(([[cert, key, ], ]) =>
     listens.map(listen =>
       http2.createSecureServer({cert, key})
