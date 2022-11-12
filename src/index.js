@@ -268,12 +268,13 @@ const SELFSIGNED = hostnames =>
     }, {
       name: 'subjectAltName',
       altNames: hostnames
-      .map(name => ({
-        type: /^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/.test(name) && 7 ||
-          /^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$/.test(name) && 6 ||
-          null,
-        value: name
-      }))
+        .map(name => ({
+          type:
+            /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/.test(name) && 7 ||
+            /^([a-z0-9]+(-[a-z0-9]+)*\.)+[a-z]{2,}$/.test(name) && 2 ||
+            0,
+          value: name
+        }))
     }]),
     cert.sign(keys.privateKey, forge.md.sha256.create()),
     [
@@ -438,7 +439,6 @@ const INDEX = ({
     TOUCHSIGNS(hostnames, mapSignname),
     TOUCHROOTS(hostnames, mapHostname),
   ])
-  .then(log)
   .then(([[cert, key, ], ]) =>
     listens.map(listen =>
       http2.createSecureServer({cert, key})
