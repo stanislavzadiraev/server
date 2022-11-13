@@ -349,17 +349,17 @@ const TOUCHSIGNS = (hostnames, mapSignname) =>
     ))
   )
 
-const TOUCHROOTS = (hostnames, mapHostname) =>
+const TOUCHROOTS = (hostnames, mapRootname) =>
   touchpaths(
     hostnames
     .map(hostname =>
-      mapHostname(hostname)
+      mapRootname(hostname)
     )
   )
 
 ////////////////////////////////////////////////////////////////////////////////
 
-const getlocation = (URL, mapHostname, mapPathname) =>
+const getlocation = (URL, mapRootname, mapPathname) =>
   Promise.all(
     [
       ['hostname', url.domainToUnicode(URL.hostname)],
@@ -376,13 +376,13 @@ const getlocation = (URL, mapHostname, mapPathname) =>
     )
   )
   .then(([hostname, pathname]) =>
-    path.join(mapHostname(hostname, pathname), mapPathname(pathname, hostname))
+    path.join(mapRootname(hostname, pathname), mapPathname(pathname, hostname))
   )
 
-const RESPONDGET = (URL, mapHostname, mapPathname, accepts, encodings, languages, output) =>
+const RESPONDGET = (URL, mapRootname, mapPathname, accepts, encodings, languages, output) =>
   getlocation(
     URL,
-    mapHostname,
+    mapRootname,
     mapPathname
   )
   .then(location =>
@@ -425,14 +425,14 @@ const validHostname = (headers, hostnames) =>
 
 const INDEX = ({
     hostnames = ['localhost'],
-    mapHostname = noop,
+    mapRootname = noop,
     mapSignname = noop,
     mapPathname = noop,
     listens,
   }) =>
   Promise.all([
     TOUCHSIGNS(hostnames, mapSignname),
-    TOUCHROOTS(hostnames, mapHostname),
+    TOUCHROOTS(hostnames, mapRootname),
   ])
   .then(([[cert, key, ], ]) =>
     listens.map(listen =>
@@ -444,7 +444,7 @@ const INDEX = ({
           validMethod(headers, 'GET') &&
           RESPONDGET(
             URL,
-            mapHostname,
+            mapRootname,
             mapPathname,
             headers['accept'] || '',
             headers['accept-encoding'] || '',
