@@ -1,4 +1,4 @@
-import {Transform} from 'stream'
+import stream from 'stream'
 import http2 from 'http2'
 import url from 'url'
 import fs from 'fs'
@@ -91,7 +91,7 @@ const RESPONDSTREAM = (output, type, encoding, source) =>
 ////////////////////////////////////////////////////////////////////////////////
 
 const transit = () =>
-  new Transform({
+  new stream.Transform({
     transform: (chunk, encoding, callback) =>
       setImmediate(callback, null, chunk)
   })
@@ -348,8 +348,6 @@ const TOUCHSIGNS = (hostnames, mapSignname) =>
       )
     ))
   )
-
-////////////////////////////////////////////////////////////////////////////////
 
 const TOUCHROOTS = (hostnames, mapHostname) =>
   touchpaths(
