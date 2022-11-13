@@ -40,9 +40,9 @@ const STREAMWRAP = (stream, name) =>
 
 const TESTSTAT = location =>
   fs.promises.stat(location)
-  .catch(err => (
-    err.code == 'ENOENT' && (err.message = 'no match item'),
-    Promise.reject(err)
+  .catch(error => (
+    error.code == 'ENOENT' && (error.message = 'no match item'),
+    Promise.reject(error)
   ))
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -74,6 +74,9 @@ const RESPONDEXCUSE = (output, error, action, URL) =>
   .then(output => (
     output.end(`${error.name}: ${error.message}, ${action}: ${URL.hostname}${URL.pathname}.`)
   ))
+  .catch(error =>
+    output.destroy(error)
+  )
 
 const RESPONDSTREAM = (output, type, encoding, source) =>
   respondheaders(output, {
@@ -87,6 +90,9 @@ const RESPONDSTREAM = (output, type, encoding, source) =>
   .then(output => (
     source.pipe(output)
   ))
+  .catch(error =>
+    RESPONDEXCUSE(output, error, 'pipe', URL)
+  )
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -424,7 +430,7 @@ const validHostname = (headers, hostnames) =>
   )
 
 const INDEX = ({
-    hostnames = ['localhost'],
+    hostnames = [],
     mapRootname = noop,
     mapSignname = noop,
     mapPathname = noop,
@@ -452,9 +458,6 @@ const INDEX = ({
             output
           ) ||
 
-          output.destroy()
-        )
-        .catch(error =>
           output.destroy()
         )
       )
