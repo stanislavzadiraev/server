@@ -100,7 +100,7 @@ const encoder = {
   'br': () => STREAMWRAP(zlib.createBrotliCompress(), 'brotli'),
   'gzip': () => STREAMWRAP(zlib.createGzip(), 'gzip'),
   'deflate': () => STREAMWRAP(zlib.createDeflate(), 'deflate'),
-  'undefined': () => STREAMWRAP(transit(), 'transit')
+  'undefined': () => STREAMWRAP(transit(), 'transit'),
 }
 
 const testfile = location =>
@@ -129,7 +129,7 @@ const sourcestream = (location, encodings) =>
     encodings.includes('gzip') && 'gzip' ||
     encodings.includes('deflate') && 'deflate' ||
     'undefined',
-    source
+    source,
   ])
   .then(([mimetype, encoding, source]) => [
     mimetype,
@@ -151,17 +151,17 @@ const RESPONDFILE = (output, URL, location, accepts, encodings, languages) =>
 const indexnames = accepts =>
   accepts
   .split(',')
-  .map(acceptItem =>
-    acceptItem
+  .map(accept =>
+    accept
     .match(/^\s*((?:[a-z]+|\*)\/(?:(?:[a-z0-9]+)(?:[+\-.][a-z0-9]+)*|\*))(?:;q=([01](?:\.\d+)?))?\s*$/s)
   )
   .map((acceptMatch, itemPosition) => ({
     type: (acceptMatch && acceptMatch[1]) || '',
     weight: (acceptMatch && acceptMatch[2]) || 1,
-    pos: itemPosition
+    pos: itemPosition,
   }))
-  .filter(acceptItem =>
-    acceptItem.type && acceptItem.type !== '*/*' && acceptItem.weight > 0.0
+  .filter(accept =>
+    accept.type && accept.type !== '*/*' && accept.weight > 0.0
   )
   .sort((a, b) => {
     const aParts = a.type.split('/')
@@ -174,9 +174,8 @@ const indexnames = accepts =>
       0
     )
   })
-  .map(
-    acceptItem =>
-    `index.${mime.getExtension(acceptItem.type)}`
+  .map(accept =>
+    `index.${mime.getExtension(accept.type)}`
   )
 
 const testdir = location =>
@@ -242,29 +241,29 @@ const SELFSIGNED = hostnames =>
       publicKey: keys.publicKey,
       validity: {
         notBefore: new Date((new Date).setFullYear((new Date).getFullYear() - 1)),
-        notAfter: new Date((new Date).setFullYear((new Date).getFullYear() + 2))
-      }
+        notAfter: new Date((new Date).setFullYear((new Date).getFullYear() + 2)),
+      },
     })
   ])
   .then(([keys, cert]) => (
     cert.setSubject([{
       name: 'commonName',
-      value: `/ ${hostnames.join(' / ') || 'default'} /`
+      value: `/ ${hostnames.join(' / ') || 'default'} /`,
     }]),
     cert.setIssuer([{
       name: 'commonName',
-      value: `/ ${hostnames.join(' / ') || 'default'} /`
+      value: `/ ${hostnames.join(' / ') || 'default'} /`,
     }]),
     cert.setExtensions([{
       name: 'basicConstraints',
-      cA: true
+      cA: true,
     }, {
       name: 'keyUsage',
       keyCertSign: true,
       digitalSignature: true,
       nonRepudiation: true,
       keyEncipherment: true,
-      dataEncipherment: true
+      dataEncipherment: true,
     }, {
       name: 'subjectAltName',
       altNames: hostnames
@@ -273,14 +272,15 @@ const SELFSIGNED = hostnames =>
             /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/.test(name) && 7 ||
             /^([a-z0-9]+(-[a-z0-9]+)*\.)+[a-z]{2,}$/.test(name) && 2 ||
             0,
-          value: name
-        }))
+          value: name,
+        })),
     }]),
-    cert.sign(keys.privateKey, forge.md.sha256.create()),
+    cert.sign(keys.privateKey,
+    forge.md.sha256.create()),
     [
       forge.pki.certificateToPem(cert),
       forge.pki.privateKeyToPem(keys.privateKey),
-      forge.pki.publicKeyToPem(keys.publicKey)
+      forge.pki.publicKeyToPem(keys.publicKey),
     ]
   ))
 
@@ -365,7 +365,7 @@ const getlocation = (URL, mapHostname, mapPathname) =>
   Promise.all(
     [
       ['hostname', url.domainToUnicode(URL.hostname)],
-      ['pathname', path.normalize(URL.pathname)]
+      ['pathname', path.normalize(URL.pathname)],
     ]
     .map(([key, value]) =>
       value &&
@@ -378,10 +378,7 @@ const getlocation = (URL, mapHostname, mapPathname) =>
     )
   )
   .then(([hostname, pathname]) =>
-    path.join(
-      mapHostname(hostname, pathname),
-      mapPathname(pathname, hostname)
-    )
+    path.join(mapHostname(hostname, pathname), mapPathname(pathname, hostname))
   )
 
 const RESPONDGET = (URL, mapHostname, mapPathname, accepts, encodings, languages, output) =>
