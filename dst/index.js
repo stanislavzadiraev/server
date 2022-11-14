@@ -28147,9 +28147,9 @@ const STREAMWRAP = (stream, name) =>
 
 const TESTSTAT = location =>
   fs.promises.stat(location)
-  .catch(err => (
-    err.code == 'ENOENT' && (err.message = 'no match item'),
-    Promise.reject(err)
+  .catch(error => (
+    error.code === 'ENOENT' && (error.message = 'no match item'),
+    Promise.reject(error)
   ));
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -28180,7 +28180,10 @@ const RESPONDEXCUSE = (output, error, action, URL) =>
   })
   .then(output => (
     output.end(`${error.name}: ${error.message}, ${action}: ${URL.hostname}${URL.pathname}.`)
-  ));
+  ))
+  .catch(error =>
+    output.destroy(error)
+  );
 
 const RESPONDSTREAM = (output, type, encoding, source) =>
   respondheaders(output, {
@@ -28193,7 +28196,10 @@ const RESPONDSTREAM = (output, type, encoding, source) =>
   })
   .then(output => (
     source.pipe(output)
-  ));
+  ))
+  .catch(error =>
+    RESPONDEXCUSE(output, error, 'pipe', URL)
+  );
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -28245,7 +28251,7 @@ const sourcestream = (location, encodings) =>
     .pipe(encoder[encoding]())
   ]);
 
-const RESPONDFILE = (output, URL, location, accepts, encodings, languages) =>
+const RESPONDFILE = (output, location, accepts, encodings, languages, URL) =>
   sourcestream(location, encodings)
   .then(([mimetype, encoding, source]) =>
     RESPONDSTREAM(output, mimetype, encoding, source)
@@ -28323,15 +28329,18 @@ const sourcefile = (accepts, location) =>
     ))
   );
 
-const RESPONDDIR = (output, URL, location, accepts, encodings, languages) =>
+const RESPONDDIR = (output, location, accepts, encodings, languages, URL) =>
   sourcefile(accepts, location)
-  .then(filename => RESPONDFILE(
-    output,
-    (URL.pathname += filename, URL),
-    path.join(location, filename),
-    accepts,
-    encodings
-  ))
+  .then(filename =>
+    RESPONDFILE(
+      output,
+      path.join(location, filename),
+      accepts,
+      encodings,
+      languages,
+      (URL.pathname += filename, URL)
+    )
+  )
   .catch(error =>
     RESPONDEXCUSE(output, error, 'scan', URL)
   );
@@ -28466,7 +28475,7 @@ const TOUCHROOTS = (hostnames, mapRootname) =>
 
 ////////////////////////////////////////////////////////////////////////////////
 
-const getlocation = (URL, mapRootname, mapPathname) =>
+const getlocation = (mapRootname, mapPathname, URL) =>
   Promise.all(
     [
       ['hostname', url.domainToUnicode(URL.hostname)],
@@ -28486,20 +28495,20 @@ const getlocation = (URL, mapRootname, mapPathname) =>
     path.join(mapRootname(hostname, pathname), mapPathname(pathname, hostname))
   );
 
-const RESPONDGET = (URL, mapRootname, mapPathname, accepts, encodings, languages, output) =>
+const RESPONDGET = (output, mapRootname, mapPathname, accepts, encodings, languages, URL) =>
   getlocation(
-    URL,
     mapRootname,
-    mapPathname
+    mapPathname,
+    URL
   )
   .then(location =>
     (location.slice(-1) === path.sep && RESPONDDIR || RESPONDFILE)(
       STREAMWRAP(output, 'output'),
-      URL,
       location,
       accepts,
       encodings,
-      languages
+      languages,
+      URL
     )
   )
   .catch(error =>
@@ -28531,7 +28540,7 @@ const validHostname = (headers, hostnames) =>
   );
 
 const INDEX = ({
-    hostnames = ['localhost'],
+    hostnames = [],
     mapRootname = noop,
     mapSignname = noop,
     mapPathname = noop,
@@ -28550,18 +28559,15 @@ const INDEX = ({
 
           validMethod(headers, 'GET') &&
           RESPONDGET(
-            URL,
+            output,
             mapRootname,
             mapPathname,
             headers['accept'] || '',
             headers['accept-encoding'] || '',
             headers['accept-language'] || '',
-            output
+            URL
           ) ||
 
-          output.destroy()
-        )
-        .catch(error =>
           output.destroy()
         )
       )

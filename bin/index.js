@@ -16,22 +16,22 @@ const dstname = 'dst'
 Promise
 .all([
   import(curpath + 'package.json', { assert: { type: 'json' } }),
-  import(parpath + 'package.json', { assert: { type: 'json' } })
+  import(parpath + 'package.json', { assert: { type: 'json' } }),
 ])
 .then(([
   {default: {name: curname}},
-  {default: {name: parname}}
+  {default: {name: parname}},
 ]) => (
   process.title += I + parname + I + curname,
   Promise
   .all([
     import(curpath + dstname + '/index.js'),
-    import(parpath + curname + '.config.js')
+    import(parpath + curname + '.config.js'),
   ])
 ))
 .then(([
   {default: mdl},
-  {default: cfg}
+  {default: cfg},
 ]) => (
   process.title += I + '[' + cfg.hostnames.join(' / ') + ']',
   mdl(cfg)

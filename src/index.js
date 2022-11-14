@@ -41,7 +41,7 @@ const STREAMWRAP = (stream, name) =>
 const TESTSTAT = location =>
   fs.promises.stat(location)
   .catch(error => (
-    error.code == 'ENOENT' && (error.message = 'no match item'),
+    error.code === 'ENOENT' && (error.message = 'no match item'),
     Promise.reject(error)
   ))
 
@@ -144,7 +144,7 @@ const sourcestream = (location, encodings) =>
     .pipe(encoder[encoding]())
   ])
 
-const RESPONDFILE = (output, URL, location, accepts, encodings, languages) =>
+const RESPONDFILE = (output, location, accepts, encodings, languages, URL) =>
   sourcestream(location, encodings)
   .then(([mimetype, encoding, source]) =>
     RESPONDSTREAM(output, mimetype, encoding, source)
@@ -222,15 +222,18 @@ const sourcefile = (accepts, location) =>
     ))
   )
 
-const RESPONDDIR = (output, URL, location, accepts, encodings, languages) =>
+const RESPONDDIR = (output, location, accepts, encodings, languages, URL) =>
   sourcefile(accepts, location)
-  .then(filename => RESPONDFILE(
-    output,
-    (URL.pathname += filename, URL),
-    path.join(location, filename),
-    accepts,
-    encodings
-  ))
+  .then(filename =>
+    RESPONDFILE(
+      output,
+      path.join(location, filename),
+      accepts,
+      encodings,
+      languages,
+      (URL.pathname += filename, URL)
+    )
+  )
   .catch(error =>
     RESPONDEXCUSE(output, error, 'scan', URL)
   )
@@ -365,7 +368,7 @@ const TOUCHROOTS = (hostnames, mapRootname) =>
 
 ////////////////////////////////////////////////////////////////////////////////
 
-const getlocation = (URL, mapRootname, mapPathname) =>
+const getlocation = (mapRootname, mapPathname, URL) =>
   Promise.all(
     [
       ['hostname', url.domainToUnicode(URL.hostname)],
@@ -385,20 +388,20 @@ const getlocation = (URL, mapRootname, mapPathname) =>
     path.join(mapRootname(hostname, pathname), mapPathname(pathname, hostname))
   )
 
-const RESPONDGET = (URL, mapRootname, mapPathname, accepts, encodings, languages, output) =>
+const RESPONDGET = (output, mapRootname, mapPathname, accepts, encodings, languages, URL) =>
   getlocation(
-    URL,
     mapRootname,
-    mapPathname
+    mapPathname,
+    URL
   )
   .then(location =>
     (location.slice(-1) === path.sep && RESPONDDIR || RESPONDFILE)(
       STREAMWRAP(output, 'output'),
-      URL,
       location,
       accepts,
       encodings,
-      languages
+      languages,
+      URL
     )
   )
   .catch(error =>
@@ -449,13 +452,13 @@ const INDEX = ({
 
           validMethod(headers, 'GET') &&
           RESPONDGET(
-            URL,
+            output,
             mapRootname,
             mapPathname,
             headers['accept'] || '',
             headers['accept-encoding'] || '',
             headers['accept-language'] || '',
-            output
+            URL
           ) ||
 
           output.destroy()
