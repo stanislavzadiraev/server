@@ -372,7 +372,7 @@ const getlocation = (mapRootname, mapPathname, URL) =>
   Promise.all(
     [
       ['hostname', url.domainToUnicode(URL.hostname)],
-      ['pathname', path.normalize(URL.pathname)],
+      ['pathname', path.normalize(decodeURI(URL.pathname))],
     ]
     .map(([key, value]) =>
       value &&
