@@ -115,7 +115,7 @@ var other = {"application/prs.cww":["cww"],"application/vnd.1000minds.decision-m
 let Mime = Mime_1;
 var mime = new Mime(standard, other);
 
-var lib = {exports: {}};
+var mime$1 = /*@__PURE__*/getDefaultExportFromCjs(mime);
 
 /**
  * Node.js module for Forge.
@@ -6925,7 +6925,7 @@ asn1$8.prettyPrint = function(obj, level, indentation) {
 
 var forge$w = forge$D;
 
-var md = forge$w.md = forge$w.md || {};
+forge$w.md = forge$w.md || {};
 forge$w.md.algorithms = forge$w.md.algorithms || {};
 
 /**
@@ -26646,20 +26646,6 @@ if(sConsoleLogger !== null &&
 // provide public access to console logger
 forge$3.log.consoleLogger = sConsoleLogger;
 
-var md_all = {exports: {}};
-
-/**
- * Node.js module for all known Forge message digests.
- *
- * @author Dave Longley
- *
- * Copyright 2011-2017 Digital Bazaar, Inc.
- */
-
-(function (module) {
-	module.exports = md;
-} (md_all));
-
 /**
  * Javascript implementation of PKCS#7 v1.5.
  *
@@ -28117,11 +28103,9 @@ function _sha1() {
  * Copyright 2011-2016 Digital Bazaar, Inc.
  */
 
-(function (module) {
-	module.exports = forge$D;
-} (lib));
+var lib = forge$D;
 
-var forge = /*@__PURE__*/getDefaultExportFromCjs(lib.exports);
+var forge = /*@__PURE__*/getDefaultExportFromCjs(lib);
 
 const noop = _ => _;
 
@@ -28237,7 +28221,7 @@ const sourcestream = (location, encodings) =>
     STREAMWRAP(fh.createReadStream({autoClose: true, emitClose: true}), 'source')
   )
   .then(source => [
-    `${mime.getType(location) || '*/*'}; charset=utf-8`,
+    `${mime$1.getType(location) || '*/*'}; charset=utf-8`,
     encodings.includes('br') && 'br' ||
     encodings.includes('gzip') && 'gzip' ||
     encodings.includes('deflate') && 'deflate' ||
@@ -28288,7 +28272,7 @@ const indexnames = accepts =>
     )
   })
   .map(accept =>
-    `index.${mime.getExtension(accept.type)}`
+    `index.${mime$1.getExtension(accept.type)}`
   );
 
 const testdir = location =>
@@ -28540,11 +28524,11 @@ const validHostname = (headers, hostnames) =>
   );
 
 const INDEX = ({
-    hostnames = [],
+    hostnames = ['localhost'],
     mapRootname = noop,
     mapSignname = noop,
     mapPathname = noop,
-    listens,
+    listens = [443],
   }) =>
   Promise.all([
     TOUCHSIGNS(hostnames, mapSignname),
