@@ -33,6 +33,6 @@ Promise
   {default: mdl},
   {default: cfg},
 ]) => (
-  process.title += I + '[' + (cfg.hostnames || [none]).join(' / ') + ']',
+  process.title += I + '[' + (cfg.hostnames || ['none']).join(' / ') + ']',
   mdl(cfg)
 ))
