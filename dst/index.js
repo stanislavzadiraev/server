@@ -28524,7 +28524,7 @@ const validHostname = (headers, hostnames) =>
   );
 
 const INDEX = ({
-    hostnames = [],
+    hostnames = ['localhost'],
     mapRootname = noop,
     mapSignname = noop,
     mapPathname = noop,
