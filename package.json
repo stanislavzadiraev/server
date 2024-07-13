@@ -1,0 +1,37 @@
+{
+  "name": "server",
+  "version": "0.0.1",
+  "keywords": [
+    "https",
+    "file",
+    "server"
+  ],
+  "description": "Some SHTTPS file erver",
+  "license": "ISC",
+  "author": "https://github.com/stanislavzadiraev",
+  "homepage": "https://github.com/stanislavzadiraev/wp#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stanislavzadiraev/server.git"
+  },
+  "bugs": {
+    "url": "https://github.com/stanislavzadiraev/server/issues"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "mime": ">=3.0.0",
+    "node-forge": ">=1.0.0",
+    "pusher": "github:stanislavzadiraev/pusher",
+    "rollup": ">=3.0.0",
+    "@rollup/plugin-node-resolve": ">=15.0.0",
+    "@rollup/plugin-commonjs": ">=23.0.0",
+    "@rollup/plugin-terser": ">=0.1.0"
+  },
+  "scripts": {
+    "build": "rollup --config",
+    "pusher": "pusher"
+  },
+  "type": "module",
+  "main": "dst/index.js",
+  "bin": "bin/index.js"
+}
